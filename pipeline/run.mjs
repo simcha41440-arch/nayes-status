@@ -14,12 +14,23 @@ import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
 import { writeArticle } from "../api/_lib/ai.js";
 import { fetchImage, checkAndStore } from "../api/_lib/media.js";
+import { checkFrames } from "../api/_lib/ai.js";
+import { db as storageDb } from "../api/_lib/db.js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { mkdtemp, writeFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+const run = promisify(execFile);
 
 const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);
 const MAX_AGE_HOURS = Number(process.env.MAX_AGE_HOURS || 12);
 const AUTO_PUBLISH = process.env.AUTO_PUBLISH === "true";
 // רף איכות: מבזק עם ציון חשיבות נמוך מזה לא נכנס בכלל (ברירת מחדל 6 מתוך 10).
 const MIN_SCORE = Number(process.env.MIN_SCORE || 6);
+// קול בסרטונים אוטומטיים. אפשר לכבות בלי לגעת בקוד: AUTO_VIDEO_SOUND=false
+const AUTO_VIDEO_SOUND = process.env.AUTO_VIDEO_SOUND !== "false";
 const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
 
 const parser = new Parser({
@@ -28,6 +39,52 @@ const parser = new Parser({
 });
 
 // כתובת התמונה של הידיעה מהפיד (אם יש): enclosure, media:content, media:thumbnail או התמונה הראשונה בתוכן.
+function videoFromItem(it) {
+  if (it.enclosure && /^video\//.test(it.enclosure.type || "") && it.enclosure.url) return { url: it.enclosure.url, type: it.enclosure.type };
+  const mc = (it.mediaContent || []).find((m) => m && m.$ && m.$.url && (m.$.medium === "video" || /^video\//.test(m.$.type || "")));
+  return mc ? { url: mc.$.url, type: mc.$.type || "video/mp4" } : null;
+}
+
+// סרטון אוטומטי: הורדה, שליפת פריימים לאורך כל הסרטון (ffmpeg), בדיקה, ורק אם הכל עבר: העלאה.
+// קול: לפי AUTO_VIDEO_SOUND (ברירת מחדל: עם קול). הקול עצמו לא נבדק, רק התמונה.
+async function processVideo(video) {
+  const EXT = { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
+  const ext = EXT[video.type] || "mp4";
+  const r = await fetch(video.url);
+  if (!r.ok) throw new Error(`הורדה נכשלה (${r.status})`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length > 50 * 1024 * 1024) throw new Error("גדול מ-50MB");
+  const dir = await mkdtemp(path.join(tmpdir(), "nayes-"));
+  try {
+    const file = path.join(dir, `in.${ext}`);
+    await writeFile(file, buf);
+    const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]);
+    const dur = parseFloat(stdout);
+    if (!isFinite(dur) || dur <= 0) throw new Error("אורך לא ידוע");
+    if (dur > 180) throw new Error("ארוך מ-3 דקות");
+    const n = Math.max(8, Math.min(40, Math.ceil(dur / 1.5)));
+    await run("ffmpeg", ["-v", "error", "-i", file, "-vf", `fps=${n / dur},scale='min(512,iw)':-2`, "-frames:v", String(n), "-q:v", "5", path.join(dir, "f%03d.jpg")]);
+    const names = (await readdir(dir)).filter((f) => f.startsWith("f") && f.endsWith(".jpg")).sort();
+    if (names.length < 3) throw new Error("לא נשלפו מספיק פריימים");
+    const frames = [];
+    for (const f of names) {
+      const b = await (await import("node:fs/promises")).readFile(path.join(dir, f));
+      frames.push({ base64: b.toString("base64"), mediaType: "image/jpeg", buffer: b });
+    }
+    const check = await checkFrames(frames);
+    if (!check.approved) return { approved: false, reason: check.reason };
+    const id = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}`;
+    const st = storageDb().storage.from("media");
+    let e = (await st.upload(`${id}.jpg`, frames[0].buffer, { contentType: "image/jpeg" })).error;
+    if (e) throw e;
+    e = (await st.upload(`${id}.${ext}`, buf, { contentType: video.type || "video/mp4" })).error;
+    if (e) throw e;
+    return { approved: true, videoUrl: `/media/${id}.${ext}`, posterUrl: `/media/${id}.jpg` };
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 function imageFromItem(it) {
   if (it.enclosure && /^image\//.test(it.enclosure.type || "") && it.enclosure.url) return it.enclosure.url;
   const mc = (it.mediaContent || []).find((m) => m && m.$ && m.$.url && (!m.$.medium || m.$.medium === "image"));
@@ -68,7 +125,8 @@ async function collectItems(sources) {
           source: src,
           hash: hash(`${src.name}|${link}`),
           link: it.link || null,
-          image: src.images ? imageFromItem(it) : null,
+          image: src.media || src.images ? imageFromItem(it) : null,
+          video: src.media || src.images ? videoFromItem(it) : null,
           when,
           text: [it.title, stripHtml(it["content:encoded"] || it.content || it.contentSnippet || "")]
             .filter(Boolean)
@@ -172,6 +230,17 @@ async function main() {
       }
     }
 
+    let videoUrl = null;
+    if (item.video && /^https:\/\//.test(item.video.url)) {
+      try {
+        const v = await processVideo(item.video);
+        if (v.approved) { videoUrl = v.videoUrl; imageUrl = imageUrl || v.posterUrl; }
+        else console.log(`  סרטון נפסל: ${v.reason}`);
+      } catch (err) {
+        console.log(`  סרטון לא עובד: ${err.message}`);
+      }
+    }
+
     const publishNow = AUTO_PUBLISH && !art.ai_notes;
     const { error } = await db().from("articles").insert({
       ...base,
@@ -185,6 +254,8 @@ async function main() {
       is_breaking: art.is_breaking,
       ai_notes: art.ai_notes || null,
       image_url: imageUrl,
+      video_url: videoUrl,
+      video_sound: Boolean(videoUrl) && AUTO_VIDEO_SOUND,
       status: publishNow ? "published" : "pending",
       published_at: publishNow ? new Date().toISOString() : null,
     });

@@ -1,19 +1,17 @@
 import { db, makeSlug } from "./_lib/db.js";
 import {
   checkPassword, issueToken, verifyToken, tokenFromRequest, deviceFromRequest, deviceHash,
-  newCode, hashCode, codeMatches, signApproval, checkApproval,
+  signApproval, checkApproval, issueProfile, checkProfile,
 } from "./_lib/auth.js";
 import { writeArticle } from "./_lib/ai.js";
 import { fetchImage, decodeDataUrl, checkAndStore, checkVideoFrames, createVideoUpload, isStoredName } from "./_lib/media.js";
-import { mailConfigured, mailOwner } from "./_lib/mailer.js";
 import { CATEGORIES } from "./_lib/config.js";
 
 // API של לוח הבקרה. כל הבקשות: POST עם { action, ... }.
 //
-// login     { password, deviceId, pairCode? } → { token } רק ממכשיר מורשה (הראשון נרשם אוטומטית)
-// mailPairCode {}                            → שולח קוד לאישור מכשיר חדש למייל של בעל האתר (אם מכשיר אבד)
-// devicesList {} / deviceRemove { id }       → המכשירים המורשים
-// pairStart {}                               → קוד חד-פעמי לאישור מכשיר נוסף (מוצג במכשיר מורשה)
+// sendProfileLink { redirect }               → קישור כניסה נשלח למייל של בעל האתר בלבד (Supabase Auth)
+// verifyProfile { accessToken }              → אם הקישור הגיע מהמייל של בעל האתר: { profile } (אסימון לשנה)
+// login     { password, profile }            → { token } רק עם אסימון פרופיל תקף
 // checkVideo { frames }                      → בדיקת AI לפריימים מהסרטון; אם עבר: כתובת העלאה + אישור חתום
 // attachVideo { id, name, approval, poster, sound } → שיוך הסרטון שהועלה לידיעה
 // setVideoSound { id, sound }                → קול בסרטון (רק אחרי שהמנהל שמע ואישר)
@@ -59,56 +57,42 @@ export default async function handler(req, res) {
   try {
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0] || "unknown";
 
-    if (action === "mailPairCode") {
-      if (!mailConfigured()) return res.status(400).json({ error: "שליחת מייל עדיין לא הוגדרה" });
+    const ownerEmail = String(process.env.CONTACT_EMAIL || "").trim().toLowerCase();
+
+    if (action === "sendProfileLink") {
+      if (!ownerEmail) return res.status(400).json({ error: "המייל של בעל האתר לא הוגדר" });
       if (tooManyAttempts(ip)) return res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
-      const code = await createPairCode();
-      if (!code) return res.status(429).json({ error: "קוד כבר נשלח. אפשר לבקש קוד חדש בעוד דקה." });
-      await mailOwner({
-        subject: `קוד לאישור מכשיר חדש בנייעס סטטוס: ${code}`,
-        text: `קוד לאישור מכשיר חדש בלוח הבקרה של נייעס סטטוס: ${code}\n\nהקוד תקף ל-10 דקות.\nאם לא ביקשת, אפשר להתעלם מההודעה. בלי הסיסמה אי אפשר להיכנס.`,
+      const origin = `https://${req.headers["x-forwarded-host"] || req.headers.host}`;
+      const { error } = await db().auth.signInWithOtp({
+        email: ownerEmail,
+        options: { emailRedirectTo: `${origin}/admin`, shouldCreateUser: true },
       });
+      if (error) {
+        console.error(error);
+        const msg = /rate|seconds|limit/i.test(error.message) ? "נשלחו כבר קישורים לאחרונה. נסה שוב בעוד כמה דקות." : "שליחת הקישור נכשלה";
+        return res.status(429).json({ error: msg });
+      }
       return res.status(200).json({ sent: true });
+    }
+
+    if (action === "verifyProfile") {
+      const { data, error } = await db().auth.getUser(String(body.accessToken || ""));
+      const email = String(data?.user?.email || "").toLowerCase();
+      if (error || !ownerEmail || email !== ownerEmail) {
+        return res.status(403).json({ error: "הקישור לא תקף, או שלא נשלח למייל של בעל האתר" });
+      }
+      return res.status(200).json({ profile: issueProfile() });
     }
 
     if (action === "login") {
       if (tooManyAttempts(ip)) return res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
+      if (!checkProfile(body.profile)) return res.status(403).json({ needProfile: true, error: "צריך קודם לאשר את הפרופיל דרך המייל" });
       if (!checkPassword(body.password)) return res.status(401).json({ error: "סיסמה שגויה" });
-      const dh = deviceHash(body.deviceId);
-      if (!dh) return res.status(400).json({ error: "מזהה מכשיר חסר" });
-
-      const { data: known } = await db().from("trusted_devices").select("id").eq("device_hash", dh).maybeSingle();
-      if (!known) {
-        const { count } = await db().from("trusted_devices").select("id", { count: "exact", head: true });
-        let allowed = count === 0; // המכשיר הראשון נרשם אוטומטית
-        if (!allowed && body.pairCode) {
-          const { data: rec } = await db().from("admin_codes").select("*").eq("id", 1).maybeSingle();
-          if (rec && Date.parse(rec.expires_at) > Date.now() && rec.attempts < 5) {
-            if (codeMatches(body.pairCode, rec.code_hash)) {
-              allowed = true;
-              await db().from("admin_codes").delete().eq("id", 1);
-            } else {
-              await db().from("admin_codes").update({ attempts: rec.attempts + 1 }).eq("id", 1);
-            }
-          }
-        }
-        if (!allowed) {
-          return res.status(403).json({ needPair: true, error: "המכשיר הזה לא מורשה. צריך קוד לאישור מכשיר חדש." });
-        }
-        const label = String(req.headers["user-agent"] || "").slice(0, 160);
-        const { error } = await db().from("trusted_devices").insert({ device_hash: dh, label });
-        if (error) throw error;
-      } else {
-        await db().from("trusted_devices").update({ last_seen: new Date().toISOString() }).eq("id", known.id);
-      }
-      return res.status(200).json({ token: issueToken(dh) });
+      return res.status(200).json({ token: issueToken(deviceHash(body.profile)) });
     }
 
-    const dh = verifyToken(tokenFromRequest(req), deviceFromRequest(req));
-    const { data: trusted } = dh
-      ? await db().from("trusted_devices").select("id").eq("device_hash", dh).maybeSingle()
-      : { data: null };
-    if (!trusted) {
+    const profile = deviceFromRequest(req);
+    if (!checkProfile(profile) || !verifyToken(tokenFromRequest(req), profile)) {
       res.status(401).json({ error: "נדרשת כניסה מחדש" });
       return;
     }
@@ -308,24 +292,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
-      case "devicesList": {
-        const { data, error } = await db().from("trusted_devices").select("id,label,created_at,last_seen").order("created_at");
-        if (error) throw error;
-        return res.status(200).json({ devices: data, current: trusted.id });
-      }
-
-      case "deviceRemove": {
-        if (body.id === trusted.id) return res.status(400).json({ error: "אי אפשר להסיר את המכשיר שאתה מחובר ממנו" });
-        const { error } = await db().from("trusted_devices").delete().eq("id", body.id);
-        if (error) throw error;
-        return res.status(200).json({ ok: true });
-      }
-
-      case "pairStart": {
-        const code = await createPairCode(true);
-        return res.status(200).json({ code });
-      }
-
       case "messagesList": {
         const { data, error } = await db().from("messages").select("*").order("created_at", { ascending: false }).limit(200);
         if (error) throw error;
@@ -345,19 +311,6 @@ export default async function handler(req, res) {
     console.error(err);
     res.status(500).json({ error: "שגיאת שרת: " + (err.message || "") });
   }
-}
-
-// קוד חד-פעמי לאישור מכשיר חדש (תקף 10 דקות). force: גם אם נוצר קוד לפני פחות מדקה.
-async function createPairCode(force = false) {
-  const { data: prev } = await db().from("admin_codes").select("created_at").eq("id", 1).maybeSingle();
-  if (!force && prev && Date.now() - Date.parse(prev.created_at) < 60000) return null;
-  const code = newCode();
-  const { error } = await db().from("admin_codes").upsert({
-    id: 1, code_hash: hashCode(code), attempts: 0,
-    expires_at: new Date(Date.now() + 10 * 60000).toISOString(), created_at: new Date().toISOString(),
-  });
-  if (error) throw error;
-  return code;
 }
 
 function clean(v) {

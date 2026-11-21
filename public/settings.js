@@ -15,6 +15,8 @@
 
   render();
 
+  function isOwner() { try { return Boolean(localStorage.getItem("nayes_profile")); } catch { return false; } }
+
   function row({ id, ic, title, sub, toggle, checked, danger, href }) {
     const inner = `${icon(ic, 24, 1.7)}<span class="txt"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>
       ${toggle ? `<span class="switch"><input type="checkbox" id="${id}" ${checked ? "checked" : ""} aria-label="${esc(title)}"><i></i></span>` : ""}`;
@@ -27,6 +29,7 @@
     const p = getPrefs();
     const muted = p.muted.map((k) => MUTABLE[k]).filter(Boolean);
     $("rows").innerHTML = `
+      ${isOwner() ? `<div class="set-sec">ניהול</div>${row({ ic: "gear", title: "לוח הבקרה", sub: "מבזקים, פרסומות ופניות", href: "/admin" })}` : ""}
       <div class="set-sec">התראות</div>
       ${row({ id: "badge", ic: "badge", title: "סימון מבזקים חדשים", sub: "מספר על הלשונית בדפדפן ועל אייקון האפליקציה", toggle: true, checked: p.badge })}
       ${row({ id: "hotAlerts", ic: "bell", title: "התראה על מבזק דחוף", sub: "התראה קופצת כשמגיע מבזק דחוף, בזמן שהאתר פתוח", toggle: true, checked: p.hotAlerts })}

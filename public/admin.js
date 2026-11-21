@@ -4,19 +4,6 @@
   try { token = localStorage.getItem(TOKEN_KEY); } catch {}
   let tab = "pending";
 
-  // מזהה קבוע לדפדפן הזה. רק דפדפנים שאושרו יכולים להיכנס ללוח הבקרה.
-  function deviceId() {
-    let id = null;
-    try { id = localStorage.getItem("nayes_device"); } catch {}
-    if (!id || id.length < 32) {
-      const b = new Uint8Array(32);
-      crypto.getRandomValues(b);
-      id = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
-      try { localStorage.setItem("nayes_device", id); } catch {}
-    }
-    return id;
-  }
-
   const $ = (id) => document.getElementById(id);
 
   // מקטין תמונה מהמחשב ל-1280 פיקסלים לכל היותר וממיר ל-JPEG, כדי שתעלה מהר.
@@ -37,10 +24,14 @@
     });
   }
 
+  // "אסימון פרופיל": מתקבל אחרי אישור דרך המייל של בעל האתר, ונשמר בדפדפן הזה לשנה.
+  const PROFILE_KEY = "nayes_profile";
+  const getProfile = () => { try { return localStorage.getItem(PROFILE_KEY) || ""; } catch { return ""; } };
+
   async function call(action, payload = {}) {
     const r = await fetch("/api/admin", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Device": deviceId(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { "Content-Type": "application/json", "X-Device": getProfile(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ action, ...payload }),
     });
     const data = await r.json().catch(() => ({}));
@@ -50,6 +41,7 @@
   }
 
   function show(loggedIn) {
+    if (!loggedIn) loginStep();
     $("login").classList.toggle("hidden", loggedIn);
     $("app").classList.toggle("hidden", !loggedIn);
     $("logout").classList.toggle("hidden", !loggedIn);
@@ -62,12 +54,39 @@
     show(false);
   }
 
-  $("mail-code").addEventListener("click", async (e) => {
+  function loginStep() {
+    const has = Boolean(getProfile());
+    $("step-profile").classList.toggle("hidden", has);
+    $("step-password").classList.toggle("hidden", !has);
+    if (has) setTimeout(() => $("password").focus(), 50);
+  }
+
+  // חזרה מהקישור שבמייל: Supabase מעביר לכאן access_token
+  async function handleMagicLink() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    const at = h.get("access_token");
+    const err = h.get("error_description");
+    if (!at && !err) return;
+    history.replaceState(null, "", "/admin");
+    if (err) { $("login-msg").textContent = "הקישור פג או כבר נוצל. בקש קישור חדש."; return; }
+    try {
+      const { profile } = await call("verifyProfile", { accessToken: at });
+      try { localStorage.setItem(PROFILE_KEY, profile); } catch {}
+      $("login-msg").className = "msg good";
+      $("login-msg").textContent = "הפרופיל אושר. עכשיו רק סיסמה.";
+    } catch (e) {
+      $("login-msg").className = "msg bad";
+      $("login-msg").textContent = e.message;
+    }
+    loginStep();
+  }
+
+  $("send-link").addEventListener("click", async (e) => {
     e.target.disabled = true;
     try {
-      await call("mailPairCode");
+      await call("sendProfileLink");
       $("login-msg").className = "msg good";
-      $("login-msg").textContent = "קוד אישור נשלח למייל של מנהל האתר. הוא תקף ל-10 דקות.";
+      $("login-msg").textContent = "נשלח קישור כניסה למייל של מנהל האתר. פתחו אותו במכשיר הזה.";
     } catch (err) {
       $("login-msg").className = "msg bad";
       $("login-msg").textContent = err.message;
@@ -80,14 +99,12 @@
     $("login-msg").className = "msg bad";
     $("login-msg").textContent = "";
     try {
-      const { token: t } = await call("login", {
-        password: $("password").value, deviceId: deviceId(), pairCode: $("pair-code").value.trim() || undefined,
-      });
+      const { token: t } = await call("login", { password: $("password").value, profile: getProfile() });
       token = t;
       try { localStorage.setItem(TOKEN_KEY, t); } catch {}
       show(true);
     } catch (err) {
-      if (err.data && err.data.needPair) $("pair-step").classList.remove("hidden");
+      if (err.data && err.data.needProfile) { try { localStorage.removeItem(PROFILE_KEY); } catch {} loginStep(); }
       $("login-msg").textContent = err.message;
     }
   });
@@ -105,7 +122,6 @@
     if (tab === "compose") return renderCompose(panel);
     if (tab === "ads") return renderAds(panel);
     if (tab === "messages") return renderMessages(panel);
-    if (tab === "devices") return renderDevices(panel);
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
     try {
       const { articles } = await call("list", { status: tab });
@@ -262,38 +278,6 @@
       } catch (err) { m.className = "msg bad"; m.textContent = err.message; }
       e.target.disabled = false;
     });
-  }
-
-  // ---------- מכשירים מורשים ----------
-  async function renderDevices(panel) {
-    panel.innerHTML = `<div class="skeleton" style="height:160px"></div>`;
-    let r;
-    try { r = await call("devicesList"); } catch (err) { panel.innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
-    const name = (ua) => /iphone|ipad/i.test(ua) ? "אייפון / אייפד" : /android/i.test(ua) ? "אנדרואיד" : /windows/i.test(ua) ? "מחשב Windows" : /mac/i.test(ua) ? "מחשב Mac" : "מכשיר";
-    panel.innerHTML = `
-      <div class="item" style="border-top-color:var(--brand)">
-        <h3 style="margin:0 0 6px">רק המכשירים האלה יכולים להיכנס ללוח הבקרה</h3>
-        <p class="src" style="margin:0">גם מי שיודע את הסיסמה לא יוכל להיכנס ממכשיר אחר.</p>
-        <div class="actions"><button class="btn" id="pair">אישור מכשיר חדש</button></div>
-        <p class="msg" id="pair-msg"></p>
-      </div>
-      ${r.devices.map((d) => `<div class="item">
-        <h3 style="margin:0 0 4px">${esc(name(d.label || ""))}${d.id === r.current ? " · המכשיר הזה" : ""}</h3>
-        <div class="src">נוסף ${esc(new Date(d.created_at).toLocaleDateString("he-IL"))}${d.last_seen ? ` · כניסה אחרונה ${esc(timeAgo(d.last_seen))}` : ""}</div>
-        ${d.id === r.current ? "" : `<div class="actions"><button class="btn gray" data-del="${esc(d.id)}">הסרה</button></div>`}
-      </div>`).join("")}`;
-    $("pair").onclick = async () => {
-      try {
-        const { code } = await call("pairStart");
-        $("pair-msg").className = "msg good";
-        $("pair-msg").innerHTML = `קוד לאישור מכשיר חדש: <b dir="ltr" style="font-size:22px;letter-spacing:4px">${esc(code)}</b><br>במכשיר החדש: היכנסו לעמוד הניהול, הקלידו את הסיסמה ואת הקוד. הקוד תקף ל-10 דקות.`;
-      } catch (err) { $("pair-msg").className = "msg bad"; $("pair-msg").textContent = err.message; }
-    };
-    panel.querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => {
-      if (!confirm("להסיר את המכשיר? הוא לא יוכל להיכנס יותר.")) return;
-      await call("deviceRemove", { id: b.dataset.del });
-      renderDevices(panel);
-    }));
   }
 
   // ---------- סרטונים ----------
@@ -480,4 +464,5 @@
   }
 
   show(Boolean(token));
+  handleMagicLink();
 })();

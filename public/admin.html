@@ -66,13 +66,15 @@
 
   <form class="login hidden" id="login">
     <h1>כניסה לעורך</h1>
-    <input type="password" id="password" placeholder="סיסמה" autocomplete="current-password" required>
-    <div id="pair-step" class="hidden" style="margin-top:12px;text-align:right">
-      <p style="margin:0 0 8px;color:var(--muted);font-size:14.5px">המכשיר הזה עוד לא מורשה. הכנס קוד לאישור מכשיר חדש. את הקוד מקבלים בלוח הבקרה במכשיר מורשה (לשונית "מכשירים"), או במייל.</p>
-      <input type="text" id="pair-code" inputmode="numeric" maxlength="6" placeholder="קוד אישור" dir="ltr" style="text-align:center;font-size:20px;letter-spacing:6px">
-      <button type="button" class="btn ghost" id="mail-code" style="width:100%;margin-top:8px">שלחו לי קוד למייל</button>
+    <div id="step-profile" class="hidden">
+      <p style="margin:0 0 14px;color:var(--muted)">פעם אחת בכל מכשיר מאשרים שזה אתה: קישור כניסה יישלח למייל של מנהל האתר.</p>
+      <button class="btn" type="button" id="send-link">כניסה מהפרופיל שלי</button>
     </div>
-    <button class="btn" type="submit">כניסה</button>
+    <div id="step-password" class="hidden">
+      <p style="margin:0 0 12px;color:var(--muted)">הפרופיל אושר במכשיר הזה ✓</p>
+      <input type="password" id="password" placeholder="סיסמה" autocomplete="current-password">
+      <button class="btn" type="submit">כניסה</button>
+    </div>
     <p class="msg bad" id="login-msg"></p>
   </form>
 
@@ -83,7 +85,6 @@
       <button class="tab" data-tab="compose">✍️ מבזק מהודעה</button>
       <button class="tab" data-tab="ads">📣 פרסומות</button>
       <button class="tab" data-tab="messages">📩 פניות</button>
-      <button class="tab" data-tab="devices">🔒 מכשירים</button>
     </div>
     <div class="apanel" id="panel"></div>
   </div>

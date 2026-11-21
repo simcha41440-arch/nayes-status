@@ -109,12 +109,3 @@ create table if not exists admin_codes (
 );
 alter table admin_codes enable row level security;
 
--- מכשירים מורשים לכניסה ללוח הבקרה (נשמרת רק "טביעה" של מזהה המכשיר)
-create table if not exists trusted_devices (
-  id           uuid primary key default gen_random_uuid(),
-  device_hash  text unique not null,
-  label        text,
-  created_at   timestamptz not null default now(),
-  last_seen    timestamptz
-);
-alter table trusted_devices enable row level security;

@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 
-// כניסה ללוח הבקרה: סיסמה (ADMIN_PASSWORD), ורק ממכשיר מורשה.
-// המכשיר הראשון שנכנס הופך למורשה. מכשיר נוסף מאושרים בקוד חד-פעמי
-// שמקבלים בלוח הבקרה (במכשיר מורשה) או במייל של בעל האתר.
+// כניסה ללוח הבקרה בשני שלבים:
+// 1. "הפרופיל שלי": פעם אחת בכל מכשיר, קישור שנשלח למייל של בעל האתר (CONTACT_EMAIL) מאשר שזה הוא.
+//    הדפדפן מקבל "אסימון פרופיל" חתום לשנה, ומאז רואה את כפתור הניהול.
+// 2. סיסמה (ADMIN_PASSWORD). בלי אסימון פרופיל תקף, הסיסמה לבדה לא מספיקה.
 
 const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -83,4 +84,19 @@ export function checkApproval(value, token) {
   const [exp, sig] = String(token || "").split(".");
   if (!exp || !sig || Number(exp) < Date.now()) return false;
   return safeEqual(sig, sign(`ok:${value}:${exp}`));
+}
+
+// ---------- אסימון פרופיל (שנה) ----------
+const PROFILE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
+export function issueProfile() {
+  const exp = String(Date.now() + PROFILE_TTL_MS);
+  const nonce = crypto.randomBytes(12).toString("hex");
+  return `${exp}.${nonce}.${sign(`profile|${exp}|${nonce}`)}`;
+}
+
+export function checkProfile(t) {
+  const [exp, nonce, sig] = String(t || "").split(".");
+  if (!exp || !nonce || !sig || Number(exp) < Date.now()) return false;
+  return safeEqual(sig, sign(`profile|${exp}|${nonce}`));
 }

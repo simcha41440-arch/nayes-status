@@ -1,7 +1,7 @@
 // Service worker: שומר את קבצי האתר במטמון כדי שייפתח מהר, גם כשהחיבור חלש.
 // מבזקים ומודעות תמיד נטענים מהרשת (ורק אם אין רשת, מהעותק האחרון).
 
-const VERSION = "nayes-v6";
+const VERSION = "nayes-v7";
 const SHELL = [
   "/", "/index.html", "/styles.css", "/common.js", "/prefs.js", "/status.js", "/pwa.js",
   "/fonts/fonts.css", "/favicon.svg", "/manifest.webmanifest",
