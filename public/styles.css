@@ -477,3 +477,8 @@ html.walled body { overflow: hidden; }
   background: var(--soft); color: var(--ink); display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.25);
 }
 body.has-viewer .fab-mini { display: none; }
+/* מחשב: הכפתורים הצפים מחוץ לעמודה, כדי שלא יסתירו את הרשימה */
+@media (min-width: 820px) {
+  .fab { left: calc(50% - 320px - 80px); }
+  .fab-mini { left: calc(50% - 320px - 72px); }
+}
