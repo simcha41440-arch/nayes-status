@@ -309,6 +309,7 @@ async function main() {
     }
 
     if (!art.relevant) {
+      console.log(`  ✗ [${item.source.name}] ${(art.reject_reason || "").slice(0, 140)}`);
       // שומרים גם ידיעות שנפסלו, כדי לא לשלם על עיבוד שלהן שוב.
       await db().from("articles").insert({
         ...base,
@@ -406,6 +407,7 @@ async function main() {
       continue;
     }
     accepted++;
+    console.log(`  ✓ [${item.source.name}] ${art.score}/10 ${publishNow ? "פורסם" : "ממתין"}: ${art.title}`);
     newTitles.push(`${art.is_breaking ? "🔴 " : "• "}${art.title} (${art.score}/10)`);
   }
 
