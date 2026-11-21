@@ -218,11 +218,6 @@
         <span class="spon">ממומן</span><span class="nm">${esc(ad.advertiser)}</span></button>`;
 
     const cards = ordered.map(cardHtml);
-    // כרטיס ראשון "הוספה", כמו "הסטטוס שלי": מוביל לפרסום באתר
-    cards.unshift(`<a class="card add" href="${ADVERTISE_LINK}" aria-label="פרסמו את העסק שלכם">
-        <span class="prev-txt">העסק שלך כאן</span>
-        <div class="av plain" style="--s:40px"><span class="face logo">נ</span><i class="plus">${icon("plus", 14, 3)}</i></div>
-        <span class="nm">הוספת מודעה</span></a>`);
     // כרטיס ממומן במקום השני בשורה, הכי בולט
     tops.forEach((ad, i) => cards.splice(Math.min(1 + i * 3, cards.length), 0, adCard(ad, ads.indexOf(ad))));
     $("cards").innerHTML = cards.join("");
@@ -532,11 +527,13 @@
 
   function renderSide() {
     const side = ads.filter((a) => a.placement === "side");
-    $("v-side").innerHTML = `<span class="lbl">ממומן</span>` + (side.length
+    // מודעת צד מופיעה רק כשיש מפרסם. בלי מפרסם: אין כלום (בלי "המקום פנוי").
+    $("v-side").style.display = side.length ? "" : "none";
+    $("v-side").innerHTML = !side.length ? "" : `<span class="lbl">ממומן</span>` + (side.length
       ? side.map((ad) => `<a class="side-ad" href="${adHref(ad)}" ${DEMO_MODE ? "" : 'target="_blank" rel="noopener sponsored"'} style="--ad-c:${esc(ad.color || "#243640")}">
           ${ad.image_url ? `<img src="${esc(ad.image_url)}" alt="">` : ""}
           <b>${esc(ad.title)}</b>${ad.text ? `<p>${esc(ad.text)}</p>` : ""}<span class="go">${esc(ad.cta || "לפרטים")}</span></a>`).join("")
-      : `<div class="side-house"><b>המקום הזה פנוי 📣</b>פרסמו כאן את העסק שלכם</div>`);
+      : "");
   }
 
   // ---------- שליטה ----------

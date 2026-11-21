@@ -289,6 +289,9 @@ async function main() {
     }
   } catch (err) { console.log("ניקוי תמונות:", err.message); }
 
+  // הודעת "פרסמו אצלנו" מהימים הראשונים יורדת מהאתר
+  await db().from("articles").update({ status: "rejected" }).eq("slug", "welcome-5").eq("status", "published").then(() => {}, () => {});
+
   // שבת וימים טובים: אין עדכונים בכלל (וגם לא עולה כסף)
   const holy = globalThis.Zmanim.holyNow(new Date());
   if (holy && process.env.IGNORE_SHABBAT !== "true") {

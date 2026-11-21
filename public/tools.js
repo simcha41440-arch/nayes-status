@@ -72,7 +72,6 @@
       card("consumer", "consumer", "צרכנות", "ריקולים ומחירים", "פתיחה"),
       lastYear.length ? card("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`, "צפייה") : "",
       card("share", "share", "שיתוף", "וואטסאפ, מייל ועוד", "שיתוף"),
-      card("ads", "megaphone", "פרסום אצלנו", "העסק שלך בסטטוס", "פרטים"),
     ].join("");
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
