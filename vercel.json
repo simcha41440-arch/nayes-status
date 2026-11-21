@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/article/:slug",
-      "destination": "/index.html"
+      "destination": "/api/page?slug=:slug"
     },
     {
       "source": "/admin",
@@ -16,6 +16,10 @@
     {
       "source": "/media/:name",
       "destination": "https://fdqnkibneaaivdiehpib.supabase.co/storage/v1/object/public/media/:name"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
     }
   ],
   "headers": [

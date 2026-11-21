@@ -393,3 +393,6 @@ html.walled body { overflow: hidden; }
 .form-msg { margin: 0; font-weight: 600; font-size: 14.5px; }
 .form-msg.good { color: #12a150; } .form-msg.bad { color: #e05252; }
 .cap-credit { font-size: 11px; opacity: .65; margin-top: 2px; }
+.seo-intro { margin: 18px 16px 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.seo-intro .seo-h1 { font-size: 14px; margin: 0 0 4px; color: var(--ink-2); }
+.seo-intro p { margin: 0; }

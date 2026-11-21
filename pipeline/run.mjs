@@ -15,6 +15,7 @@ import { db, makeSlug } from "../api/_lib/db.js";
 import { writeArticle } from "../api/_lib/ai.js";
 import { fetchImage, checkAndStore } from "../api/_lib/media.js";
 import { checkFrames } from "../api/_lib/ai.js";
+import { readTelegram } from "../api/_lib/telegram.js";
 import { db as storageDb } from "../api/_lib/db.js";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -186,6 +187,29 @@ async function collectItems(sources) {
   const cutoff = Date.now() - MAX_AGE_HOURS * 3600 * 1000;
   const items = [];
   for (const src of sources) {
+    if (src.type === "telegram") {
+      // ערוץ טלגרם רשמי: הודעה + תמונה/סרטון, עם קרדיט לגוף שפרסם
+      try {
+        const { posts } = await readTelegram(src.channel);
+        for (const p of posts) {
+          const when = p.date ? Date.parse(p.date) : Date.now();
+          if (when < cutoff || !p.text || p.text.length < 25) continue;
+          items.push({
+            source: { ...src, name: src.name || src.credit },
+            hash: hash(`tg|${p.id}`),
+            link: p.link,
+            image: src.media ? p.photos[0] || null : null,
+            video: src.media && p.videos[0] ? { url: p.videos[0], type: "video/mp4" } : null,
+            credit: src.credit || null,
+            when,
+            text: p.text.slice(0, 15000),
+          });
+        }
+      } catch (err) {
+        console.warn(`⚠ ערוץ טלגרם "${src.channel}" נכשל: ${err.message}`);
+      }
+      continue;
+    }
     try {
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), 20000);
@@ -319,8 +343,9 @@ async function main() {
       }
     }
 
+    // קרדיט לתמונה/סרטון מהמקור עצמו (למשל "דובר צה"ל")
+    let credit = (imageUrl || videoUrl) && item.credit ? `${videoUrl ? "תיעוד" : "צילום"}: ${item.credit}` : null;
     // אין תמונה מהמקור: תמונה (ולמבזקים חשובים גם סרטון) ממאגר חופשי, אחרי בדיקה
-    let credit = null;
     if (PIXABAY_KEY && art.image_query) {
       if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
         try {
