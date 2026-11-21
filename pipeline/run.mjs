@@ -28,6 +28,8 @@ const run = promisify(execFile);
 
 const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);        // כמה ידיעות העורך הראשי כותב בכל ריצה
 const PREFILTER_BATCH = Number(process.env.PREFILTER_BATCH || 40); // כמה ידיעות נבדקות בסינון הזול בכל ריצה
+// באילו ערוצים מותר לשים תמונת אילוסטרציה ממאגר חופשי (כשאין תמונה רשמית מהמקור)
+const STOCK_CATEGORIES = new Set((process.env.STOCK_CATEGORIES || "economy,consumer").split(",").map((s) => s.trim()));
 const MAX_AGE_HOURS = Number(process.env.MAX_AGE_HOURS || 12);
 const AUTO_PUBLISH = process.env.AUTO_PUBLISH === "true";
 // רף איכות: מבזק עם ציון חשיבות נמוך מזה לא נכנס בכלל (ברירת מחדל 6 מתוך 10).
@@ -276,6 +278,17 @@ async function main() {
     console.log(`הסריקה מדלגת: חסרים ${missing.join(", ")} בהגדרות (Settings > Secrets and variables > Actions).`);
     return;
   }
+  // ניקוי: תמונות אילוסטרציה שעלו בעבר על נושאים שלא מתאים להם (פוליטיקה, אנשים וכו') יורדות, והמבזק נשאר כטקסט
+  try {
+    const { data: stale } = await db().from("articles").select("id,category")
+      .or("image_credit.ilike.%/ Pixabay,image_credit.ilike.%/ Pexels").limit(500);
+    const ids = (stale || []).filter((a) => !STOCK_CATEGORIES.has(a.category)).map((a) => a.id);
+    if (ids.length) {
+      await db().from("articles").update({ image_url: null, image_credit: null, video_url: null }).in("id", ids);
+      console.log(`הוסרו תמונות אילוסטרציה מ-${ids.length} מבזקים שלא מתאימה להם תמונה כזו.`);
+    }
+  } catch (err) { console.log("ניקוי תמונות:", err.message); }
+
   // שבת וימים טובים: אין עדכונים בכלל (וגם לא עולה כסף)
   const holy = globalThis.Zmanim.holyNow(new Date());
   if (holy && process.env.IGNORE_SHABBAT !== "true") {
@@ -373,8 +386,10 @@ async function main() {
 
     // קרדיט לתמונה/סרטון מהמקור עצמו (למשל "דובר צה"ל")
     let credit = (imageUrl || videoUrl) && item.credit ? `${videoUrl ? "תיעוד" : "צילום"}: ${item.credit}` : null;
-    // אין תמונה מהמקור: תמונה (ולמבזקים חשובים גם סרטון) ממאגר חופשי, אחרי בדיקה
-    if (PIXABAY_KEY && art.image_query) {
+    // אין תמונה מהמקור: תמונת אילוסטרציה ממאגר חופשי, רק בכלכלה וצרכנות (כסף, מוצרים, מחירים).
+    // ידיעה על אנשים, פוליטיקה, רבנים, קהילה או ביטחון בלי תמונה רשמית: בלי תמונה בכלל (סטטוס טקסט).
+    const wantStock = Boolean(art.image_query) && STOCK_CATEGORIES.has(art.category) && !imageUrl && !videoUrl;
+    if (PIXABAY_KEY && wantStock) {
       if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
         try {
           const v = await pixabayVideo(art.image_query);
@@ -388,7 +403,7 @@ async function main() {
         } catch (err) { console.log(`  Pixabay תמונה: ${err.message}`); }
       }
     }
-    if (PEXELS_KEY && art.image_query && !imageUrl) {
+    if (PEXELS_KEY && wantStock && !imageUrl) {
       if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
         try {
           const v = await pexelsVideo(art.image_query);
