@@ -122,6 +122,41 @@ async function pexelsVideo(query) {
   return null;
 }
 
+// ---------- Pixabay: מאגר חופשי לשימוש (גם מסחרי, בלי צורך באישור). הקבצים נשמרים אצלנו. ----------
+const PIXABAY_KEY = process.env.PIXABAY_API_KEY;
+
+async function pixabay(path, query) {
+  const q = encodeURIComponent(String(query).slice(0, 90));
+  const r = await fetch(`https://pixabay.com/api/${path}?key=${PIXABAY_KEY}&q=${q}&safesearch=true&per_page=6&lang=en`);
+  if (!r.ok) throw new Error(`Pixabay ${r.status}`);
+  return r.json();
+}
+
+async function pixabayImage(query) {
+  const data = await pixabay("", `${query}`);
+  for (const h of data.hits || []) {
+    try {
+      const stored = await checkAndStore(await fetchImage(h.largeImageURL || h.webformatURL));
+      if (stored.approved) return { url: stored.url, credit: `צילום: ${h.user || "Pixabay"} / Pixabay` };
+    } catch {}
+  }
+  return null;
+}
+
+async function pixabayVideo(query) {
+  const data = await pixabay("videos/", query);
+  for (const h of data.hits || []) {
+    if (!h.duration || h.duration > 30) continue;
+    const f = (h.videos && (h.videos.small || h.videos.tiny)) || null;
+    if (!f || !f.url) continue;
+    try {
+      const res = await processVideo({ url: f.url, type: "video/mp4" });
+      if (res.approved) return { ...res, credit: `וידאו: ${h.user || "Pixabay"} / Pixabay` };
+    } catch {}
+  }
+  return null;
+}
+
 function imageFromItem(it) {
   if (it.enclosure && /^image\//.test(it.enclosure.type || "") && it.enclosure.url) return it.enclosure.url;
   const mc = (it.mediaContent || []).find((m) => m && m.$ && m.$.url && (!m.$.medium || m.$.medium === "image"));
@@ -284,9 +319,23 @@ async function main() {
       }
     }
 
-    // אין תמונה מהמקור: תמונה (ולמבזקים חשובים גם סרטון) ממאגר Pexels, אחרי בדיקה
+    // אין תמונה מהמקור: תמונה (ולמבזקים חשובים גם סרטון) ממאגר חופשי, אחרי בדיקה
     let credit = null;
-    if (PEXELS_KEY && art.image_query) {
+    if (PIXABAY_KEY && art.image_query) {
+      if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
+        try {
+          const v = await pixabayVideo(art.image_query);
+          if (v) { videoUrl = v.videoUrl; imageUrl = imageUrl || v.posterUrl; credit = v.credit; }
+        } catch (err) { console.log(`  Pixabay וידאו: ${err.message}`); }
+      }
+      if (!imageUrl) {
+        try {
+          const im = await pixabayImage(art.image_query);
+          if (im) { imageUrl = im.url; credit = credit || im.credit; }
+        } catch (err) { console.log(`  Pixabay תמונה: ${err.message}`); }
+      }
+    }
+    if (PEXELS_KEY && art.image_query && !imageUrl) {
       if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
         try {
           const v = await pexelsVideo(art.image_query);
