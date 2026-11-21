@@ -40,7 +40,7 @@
       ${row({ id: "hotAlerts", ic: "bell", title: "התראה על מבזק דחוף", sub: "התראה קופצת כשמגיע מבזק דחוף, בזמן שהאתר פתוח", toggle: true, checked: p.hotAlerts })}
 
       <div class="set-sec">אישי</div>
-      ${row({ id: "city", ic: "city", title: "העיר שלי", sub: p.city ? `${p.city} · ערוץ אישי וזמני היום לפי העיר` : "בחירת עיר לערוץ אישי ולזמני היום" })}
+      ${row({ id: "city", ic: "city", title: "העיר שלי", sub: `${p.city} · ערוץ אישי וזמני היום לפי העיר` })}
 
       <div class="set-sec">תצוגה</div>
       ${row({ id: "theme", ic: "theme", title: "ערכת נושא", sub: THEMES[p.theme] })}
@@ -71,7 +71,7 @@
       setPref("hotAlerts", e.target.checked);
       snack(e.target.checked ? "התראות על מבזקים דחופים הופעלו" : "ההתראות כובו");
     };
-    $("city").onclick = () => choose("העיר שלי", Object.fromEntries([["", "בלי עיר"], ...CITIES.map((c) => [c, c])]), getPrefs().city, (v) => { setPref("city", v); render(); });
+    $("city").onclick = () => choose("העיר שלי", Object.fromEntries(CITIES.map((c) => [c, c])), getPrefs().city, (v) => { setPref("city", v); render(); });
     $("theme").onclick = () => choose("ערכת נושא", THEMES, getPrefs().theme, (v) => { setPref("theme", v); render(); });
     $("font").onclick = () => choose("גודל טקסט", FONTS, getPrefs().font, (v) => { setPref("font", v); render(); });
     $("speed").onclick = () => choose("מהירות מעבר בין סטטוסים", SPEEDS, getPrefs().speed, (v) => { setPref("speed", v); render(); });

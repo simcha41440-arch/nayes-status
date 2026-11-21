@@ -52,7 +52,7 @@
     box.innerHTML = [
       tool("zmanim", "zmanim", "זמני היום", nextZman()),
       tool("oref", "oref", "פיקוד העורף", state.oref[0] ? timeAgo(state.oref[0].date) : "הנחיות"),
-      tool("city", "city", city || "העיר שלי", city ? "מבזקים מהעיר" : "בחירת עיר"),
+      tool("city", "city", city || "העיר שלי", "מבזקים מהעיר"),
       tool("consumer", "consumer", "צרכנות", "ריקולים ומחירים"),
       lastYear.length ? tool("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`) : "",
       tool("share", "whatsapp", "שיתוף", "לשלוח לחברים"),
@@ -126,11 +126,24 @@
     const now = new Date();
     const nextKey = offset === 0 ? (ZROWS.find(([k]) => t[k] && t[k] > now) || [])[0] : null;
 
-    // השבת הקרובה
-    const dow = date.getUTCDay();
-    const fri = Z.nextYMD(ymd, (5 - dow + 7) % 7);
-    const sat = Z.nextYMD(fri, 1);
-    const tf = Z.dayTimes(city, fri), ts = Z.dayTimes(city, sat);
+    // כניסת שבת / חג: רק ביום שישי ובערב חג (היום חול, ומחר שבת או חג)
+    const tomorrowHoly = !Z.holyName(ymd) && Z.holyName(Z.nextYMD(ymd));
+    let entry = "";
+    if (tomorrowHoly) {
+      let last = Z.nextYMD(ymd);
+      const names = [Z.holyName(last)];
+      while (Z.holyName(Z.nextYMD(last))) { last = Z.nextYMD(last); names.push(Z.holyName(last)); }
+      const holyLabel = [...new Set(names)].join(" ו");
+      const isShabbat = names.length === 1 && names[0] === "שבת";
+      const te = Z.dayTimes(city, last);
+      const word = isShabbat ? "השבת" : "החג";
+      entry = `<div class="zm-shabbat">
+        <h3>${icon("zmanim", 18)} ${isShabbat ? "כניסת שבת" : `כניסת ${esc(holyLabel)}`} ב${esc(city)}</h3>
+        <div class="zm-row"><span>הדלקת נרות (${t.candlesMin} דקות לפני השקיעה)</span><b>${fmt(t.candles)}</b></div>
+        <div class="zm-row"><span>צאת ${word}</span><b>${fmt(te.tzeis)}</b></div>
+        <div class="zm-row"><span>צאת ${word} לר"ת</span><b>${fmt(te.tzeisRt)}</b></div>
+      </div>`;
+    }
 
     const s = sheet("זמני היום", `
       <div class="zm-top">
@@ -141,21 +154,18 @@
       </div>
       <div class="zm-date">${esc(hebrewDate(date))}</div>
       <div class="zm-list">${ZROWS.map(([k, label]) => `<div class="zm-row ${k === nextKey ? "next" : ""}"><span>${esc(label)}</span><b>${fmt(t[k])}</b></div>`).join("")}</div>
-      <div class="zm-shabbat">
-        <h3>${icon("zmanim", 18)} השבת הקרובה ב${esc(city)}</h3>
-        <div class="zm-row"><span>הדלקת נרות (${tf.candlesMin} דקות לפני השקיעה)</span><b>${fmt(tf.candles)}</b></div>
-        <div class="zm-row"><span>צאת השבת</span><b>${fmt(ts.tzeis)}</b></div>
-        <div class="zm-row"><span>צאת השבת לר"ת</span><b>${fmt(ts.tzeisRt)}</b></div>
-      </div>
+      ${entry}
       <button class="btn zm-share" id="zm-share">${icon("whatsapp", 20)} שליחת הזמנים בוואטסאפ</button>
-      <p class="zm-note">החישוב אסטרונומי לפי מיקום העיר, בגובה פני הים. מג"א: מעלות השחר ועד צאת הכוכבים (16.1 מעלות).
-      צאת הכוכבים: 8.5 מעלות מתחת לאופק. הזמנים לצורך מידע בלבד, ויש לעיין בלוח המקובל בקהילתכם.</p>`);
+      <p class="zm-note zm-warn">שימו לב: הזמנים מחושבים באופן ממוחשב ועלולים לסטות בכמה דקות. אין לסמוך עליהם בדיוק רב,
+      ובפרט לא בדקות האחרונות שלפני סוף הזמן. יש להחמיר ולהקדים, ולעיין בלוח המקובל בקהילתכם.</p>
+      <p class="zm-note">החישוב לפי מיקום העיר, בגובה פני הים. מג"א: מעלות השחר ועד צאת הכוכבים (16.1 מעלות).
+      צאת הכוכבים: 8.5 מעלות מתחת לאופק.</p>`);
 
     s.querySelectorAll("[data-off]").forEach((b) => (b.onclick = () => openZmanim(Number(b.dataset.off))));
     $("zm-city").onclick = () => chooseCity(() => openZmanim(offset));
     $("zm-share").onclick = () => {
       const lines = ZROWS.map(([k, label]) => `${label}: ${fmt(t[k])}`).join("\n");
-      const text = `זמני היום ב${city}\n${hebrewDate(date)}\n\n${lines}\n\nהדלקת נרות: ${fmt(tf.candles)} · צאת השבת: ${fmt(ts.tzeis)}\n\nנייעס סטטוס: ${location.origin}/`;
+      const text = `זמני היום ב${city}\n${hebrewDate(date)}\n\n${lines}${tomorrowHoly ? `\nהדלקת נרות: ${fmt(t.candles)}` : ""}\n\n(הזמנים ממוחשבים ועלולים לסטות בכמה דקות)\nנייעס סטטוס: ${location.origin}/`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
     };
   }

@@ -1,6 +1,6 @@
 // העדפות הקורא (נשמרות רק בדפדפן שלו) והחלה מיידית של ערכת נושא וגודל טקסט.
 
-const PREFS_DEFAULT = { theme: "dark", font: "m", speed: "normal", badge: true, hotAlerts: false, muted: [], city: "" };
+const PREFS_DEFAULT = { theme: "dark", font: "m", speed: "normal", badge: true, hotAlerts: false, muted: [], city: "ירושלים" };
 
 function getPrefs() {
   try { return { ...PREFS_DEFAULT, ...JSON.parse(localStorage.getItem("nayes_prefs") || "{}") }; }

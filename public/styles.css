@@ -455,3 +455,4 @@ html.walled body { overflow: hidden; }
 .dlg { max-height: 90vh; overflow-y: auto; }
 .snack-act { background: none; border: 0; color: #7fd1ff; font-weight: 700; cursor: pointer; margin-inline-start: 8px; }
 .reply-row .heart + .heart { margin-inline-start: 0; }
+.zm-warn { color: var(--ink-2); background: var(--soft); border-radius: 12px; padding: 10px 12px; }
