@@ -14,3 +14,4 @@ jobs:
           node-version: 22
       - run: npm install --omit=dev
       - run: node scripts/check-sources.mjs
+      - run: node scripts/check-telegram.mjs
