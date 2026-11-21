@@ -85,6 +85,43 @@ async function processVideo(video) {
   }
 }
 
+// ---------- Pexels: מאגר תמונות וסרטונים חופשי לשימוש (גם מסחרי, בלי צורך באישור) ----------
+const PEXELS_KEY = process.env.PEXELS_API_KEY;
+const VIDEO_MIN_SCORE = Number(process.env.VIDEO_MIN_SCORE || 8);
+
+async function pexels(path) {
+  const r = await fetch(`https://api.pexels.com${path}`, { headers: { Authorization: PEXELS_KEY } });
+  if (!r.ok) throw new Error(`Pexels ${r.status}`);
+  return r.json();
+}
+
+async function pexelsImage(query) {
+  const data = await pexels(`/v1/search?query=${encodeURIComponent(query)}&per_page=6&orientation=portrait`);
+  for (const ph of data.photos || []) {
+    try {
+      const stored = await checkAndStore(await fetchImage(ph.src.large || ph.src.medium));
+      if (stored.approved) return { url: stored.url, credit: `צילום: ${ph.photographer} / Pexels` };
+    } catch {}
+  }
+  return null;
+}
+
+async function pexelsVideo(query) {
+  const data = await pexels(`/v1/videos/search?query=${encodeURIComponent(query)}&per_page=4&orientation=portrait&size=small`);
+  for (const v of data.videos || []) {
+    if (!v.duration || v.duration > 30) continue;
+    const file = (v.video_files || [])
+      .filter((f) => f.file_type === "video/mp4" && f.width && f.width <= 720)
+      .sort((a, b) => b.width - a.width)[0];
+    if (!file) continue;
+    try {
+      const res = await processVideo({ url: file.link, type: "video/mp4" });
+      if (res.approved) return { ...res, credit: `וידאו: ${v.user?.name || "Pexels"} / Pexels` };
+    } catch {}
+  }
+  return null;
+}
+
 function imageFromItem(it) {
   if (it.enclosure && /^image\//.test(it.enclosure.type || "") && it.enclosure.url) return it.enclosure.url;
   const mc = (it.mediaContent || []).find((m) => m && m.$ && m.$.url && (!m.$.medium || m.$.medium === "image"));
@@ -247,8 +284,25 @@ async function main() {
       }
     }
 
+    // אין תמונה מהמקור: תמונה (ולמבזקים חשובים גם סרטון) ממאגר Pexels, אחרי בדיקה
+    let credit = null;
+    if (PEXELS_KEY && art.image_query) {
+      if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
+        try {
+          const v = await pexelsVideo(art.image_query);
+          if (v) { videoUrl = v.videoUrl; imageUrl = imageUrl || v.posterUrl; credit = v.credit; }
+        } catch (err) { console.log(`  Pexels וידאו: ${err.message}`); }
+      }
+      if (!imageUrl) {
+        try {
+          const im = await pexelsImage(art.image_query);
+          if (im) { imageUrl = im.url; credit = credit || im.credit; }
+        } catch (err) { console.log(`  Pexels תמונה: ${err.message}`); }
+      }
+    }
+
     const publishNow = AUTO_PUBLISH && !art.ai_notes;
-    const { error } = await db().from("articles").insert({
+    const row = {
       ...base,
       title: art.title,
       summary: art.summary || null,
@@ -260,11 +314,18 @@ async function main() {
       is_breaking: art.is_breaking,
       ai_notes: art.ai_notes || null,
       image_url: imageUrl,
+      image_credit: credit,
       video_url: videoUrl,
       video_sound: Boolean(videoUrl) && AUTO_VIDEO_SOUND,
       status: publishNow ? "published" : "pending",
       published_at: publishNow ? new Date().toISOString() : null,
-    });
+    };
+    let { error } = await db().from("articles").insert(row);
+    if (error && /image_credit|video_url|video_sound/.test(error.message || "")) {
+      // עדכון במסד הנתונים עוד לא הורץ: שומרים בלי העמודות החדשות
+      const { image_credit, video_url, video_sound, ...basic } = row;
+      ({ error } = await db().from("articles").insert(basic));
+    }
     if (error) {
       console.warn("⚠ שמירה נכשלה:", error.message);
       continue;

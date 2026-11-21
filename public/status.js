@@ -329,9 +329,9 @@
   }
 
   // כיתוב בתחתית תמונה או סרטון, כמו בסטטוס: עד 3 שורות, ו"עוד" פותח את כל הטקסט.
-  function caption(titleHtml, summary) {
+  function caption(titleHtml, summary, credit) {
     return `<div class="s-caption" id="cap"><div class="cap-text" id="cap-text"><b>${titleHtml}</b>${summary ? ` ${esc(summary)}` : ""}</div>
-      <button class="cap-more" id="cap-more" hidden>עוד</button></div>`;
+      <button class="cap-more" id="cap-more" hidden>עוד</button>${credit ? `<div class="cap-credit">${esc(credit)}</div>` : ""}</div>`;
   }
   function setupCaption() {
     const cap = $("cap"), txt = $("cap-text"), more = $("cap-more");
@@ -409,10 +409,10 @@
     $("s-media").innerHTML = a.video_url
       ? `<div class="s-img"><video id="s-video" src="${esc(a.video_url)}" ${a.image_url ? `poster="${esc(a.image_url)}"` : ""} playsinline muted preload="auto"></video></div>
          ${a.video_sound ? `<button class="ico sound-btn" id="sound-btn" aria-label="קול"></button>` : ""}
-         ${caption(title, a.summary)}`
+         ${caption(title, a.summary, a.image_credit)}`
       : a.image_url
       ? `<div class="s-img"><img src="${esc(a.image_url)}" alt=""></div>
-         ${caption(title, a.summary)}`
+         ${caption(title, a.summary, a.image_credit)}`
       : `<div class="s-text fade">${hotTag}<h2>${title}</h2>${a.summary ? `<p>${esc(a.summary)}</p>` : ""}
          ${a.impact ? `<p class="tip">מה זה אומר עליך? ${esc(a.impact)}</p>` : ""}</div>`;
     setupVideo(a);

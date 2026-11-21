@@ -54,7 +54,10 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
 - city: אם הידיעה מקומית לאחת הערים ${CITIES.join(", ")}, כתוב את שם העיר. אחרת מחרוזת ריקה.
 - is_breaking: true רק לאירוע דחוף ומשמעותי שקורה עכשיו.
 - ai_notes: הערות קצרות לעורך האנושי: ספקות, מה לאמת, רגישויות. אם הכל ברור, מחרוזת ריקה.
-- reject_reason: אם relevant=false, סיבה קצרה. אחרת מחרוזת ריקה.`;
+- reject_reason: אם relevant=false, סיבה קצרה. אחרת מחרוזת ריקה.
+- image_query: 2-4 מילים באנגלית לחיפוש תמונת אווירה במאגר תמונות חופשי. תאר חפץ, מקום או סמל שמתאים לנושא
+  (למשל "train station platform", "shekel coins", "hospital corridor", "rain on window"). בלי אנשים ובלי פרצופים.
+  אם אין תמונה מתאימה ומכבדת (למשל באסון או פטירה), מחרוזת ריקה.`;
 
 const ARTICLE_SCHEMA = {
   type: "object",
@@ -70,10 +73,11 @@ const ARTICLE_SCHEMA = {
     city: { type: "string" },
     is_breaking: { type: "boolean" },
     ai_notes: { type: "string" },
+    image_query: { type: "string" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes",
+    "category", "city", "is_breaking", "ai_notes", "image_query",
   ],
   additionalProperties: false,
 };

@@ -1,4 +1,4 @@
-import { db, PUBLIC_FIELDS } from "./_lib/db.js";
+import { db, PUBLIC_FIELDS, PUBLIC_FIELDS_BASIC, isMissingColumn } from "./_lib/db.js";
 import { CATEGORIES, REACTIONS } from "./_lib/config.js";
 
 // API ציבורי לקריאת ידיעות שפורסמו.
@@ -39,12 +39,9 @@ export default async function handler(req, res) {
     const limit = Math.min(Number(req.query.limit) || 30, 60);
 
     if (slug) {
-      const { data, error } = await db()
-        .from("articles")
-        .select(PUBLIC_FIELDS)
-        .eq("slug", String(slug))
-        .eq("status", "published")
-        .maybeSingle();
+      const one = (fields) => db().from("articles").select(fields).eq("slug", String(slug)).eq("status", "published").maybeSingle();
+      let { data, error } = await one(PUBLIC_FIELDS);
+      if (isMissingColumn(error)) ({ data, error } = await one(PUBLIC_FIELDS_BASIC));
       if (error) throw error;
       if (!data) {
         res.status(404).json({ error: "not found" });
@@ -56,21 +53,24 @@ export default async function handler(req, res) {
       return;
     }
 
-    let q = db().from("articles").select(PUBLIC_FIELDS).eq("status", "published");
+    const build = (fields) => {
+      let q = db().from("articles").select(fields).eq("status", "published");
 
-    if (category && CATEGORIES[category]) q = q.eq("category", category);
-    if (city) q = q.eq("city", String(city));
-    if (req.query.after) q = q.gt("published_at", String(req.query.after));
-    if (req.query.before) q = q.lt("published_at", String(req.query.before));
+      if (category && CATEGORIES[category]) q = q.eq("category", category);
+      if (city) q = q.eq("city", String(city));
+      if (req.query.after) q = q.gt("published_at", String(req.query.after));
+      if (req.query.before) q = q.lt("published_at", String(req.query.before));
+      if (popular) {
+        const since = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+        q = q.gte("published_at", since).order("views", { ascending: false });
+      } else {
+        q = q.order("published_at", { ascending: false });
+      }
+      return q.limit(limit);
+    };
 
-    if (popular) {
-      const since = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
-      q = q.gte("published_at", since).order("views", { ascending: false });
-    } else {
-      q = q.order("published_at", { ascending: false });
-    }
-
-    const { data, error } = await q.limit(limit);
+    let { data, error } = await build(PUBLIC_FIELDS);
+    if (isMissingColumn(error)) ({ data, error } = await build(PUBLIC_FIELDS_BASIC));
     if (error) throw error;
 
     // מטמון קצר ב-CDN: עומס נמוך על המסד, ועדיין עדכני תוך פחות מדקה.

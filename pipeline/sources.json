@@ -1,18 +1,10 @@
 [
-  {
-    "name": "דוגמה: הודעות דוברות של משרד ממשלתי",
-    "url": "https://example.com/rss.xml",
-    "category": "",
-    "city": "",
-    "media": false,
-    "enabled": false
-  },
-  {
-    "name": "דוגמה: עדכוני עירייה",
-    "url": "https://example.org/feed",
-    "category": "local",
-    "city": "בני ברק",
-    "media": false,
-    "enabled": false
-  }
+  { "name": "ynet", "url": "https://www.ynet.co.il/Integration/StoryRss1854.xml", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "ynet", "url": "https://www.ynet.co.il/Integration/StoryRss2.xml", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "וואלה", "url": "https://rss.walla.co.il/feed/1", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "מעריב", "url": "https://www.maariv.co.il/Rss/RssChadashot", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "ישראל היום", "url": "https://www.israelhayom.co.il/rss.xml", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "גלובס", "url": "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2", "category": "economy", "city": "", "media": false, "enabled": true },
+  { "name": "JDN", "url": "https://www.jdn.co.il/feed/", "category": "", "city": "", "media": false, "enabled": true },
+  { "name": "השירות המטאורולוגי", "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_general_country_he.xml", "category": "weather", "city": "", "media": false, "enabled": true }
 ]

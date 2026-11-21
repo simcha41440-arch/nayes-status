@@ -20,6 +20,7 @@ create table if not exists articles (
   source_url    text,
   source_hash   text unique,            -- מונע כפילויות מאותו מקור
   image_url     text,                   -- רק תמונה שעברה בדיקה ואושרה
+  image_credit  text,                   -- קרדיט לצלם (למשל Pexels)
   video_url     text,                   -- רק סרטון שכל הפריימים שלו נבדקו ואושרו
   video_sound   boolean not null default false, -- קול רק אחרי שהמנהל שמע ואישר
   ai_notes      text,

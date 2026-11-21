@@ -24,7 +24,12 @@ export function makeSlug() {
 
 // השדות שמותר לחשוף לגולשים.
 export const PUBLIC_FIELDS =
-  "slug,title,summary,impact,body,category,city,is_breaking,source_name,image_url,video_url,video_sound,views,reactions,published_at";
+  "slug,title,summary,impact,body,category,city,is_breaking,source_name,image_url,image_credit,video_url,video_sound,views,reactions,published_at";
+
+// אם עדכון במסד הנתונים עוד לא הורץ (עמודה חסרה), מוותרים על העמודות החדשות במקום להיכשל.
+export const PUBLIC_FIELDS_BASIC =
+  "slug,title,summary,impact,body,category,city,is_breaking,source_name,image_url,views,reactions,published_at";
+export const isMissingColumn = (err) => Boolean(err && (err.code === "42703" || err.code === "PGRST204" || /column .* does not exist|Could not find the .* column/i.test(err.message || "")));
 
 // השדות של מודעה שמוצגים לגולשים (בלי סטטיסטיקות).
 export const AD_PUBLIC_FIELDS = "id,advertiser,title,text,cta,link,image_url,placement,color";

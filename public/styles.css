@@ -392,3 +392,4 @@ html.walled body { overflow: hidden; }
 .bell-form .btn { justify-self: start; }
 .form-msg { margin: 0; font-weight: 600; font-size: 14.5px; }
 .form-msg.good { color: #12a150; } .form-msg.bad { color: #e05252; }
+.cap-credit { font-size: 11px; opacity: .65; margin-top: 2px; }
