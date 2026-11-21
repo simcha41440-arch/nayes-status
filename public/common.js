@@ -227,7 +227,7 @@ const DEMO_ADS = [
 
 const CHANNEL_COLORS = {
   hot: "#c0392b", general: "#243640", politics: "#3f4f8f", community: "#2f7566", torah: "#7d5b2e",
-  economy: "#c0612b", consumer: "#b5476b", zmanim: "#3d6e9e", oref: "#b23a2f", city: "#6f4396", memory: "#6b5a8e", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
+  economy: "#c0612b", consumer: "#b5476b", megaphone: "#c0612b", share: "#1f9d55", zmanim: "#3d6e9e", oref: "#b23a2f", city: "#6f4396", memory: "#6b5a8e", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
 };
 
 const ICON_PATHS = {
@@ -256,6 +256,8 @@ const ICON_PATHS = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
   sms: '<path d="M4 18.5V6.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8z"/><circle cx="8.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="12" cy="10.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="10.5" r=".9" fill="currentColor"/>',
   telegram: '<path d="M21 4 3 11l6 2.2L18 7l-7 7.5V20l3.2-3.6L18 19z"/>',
+  pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  pin: '<path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   install: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/>',

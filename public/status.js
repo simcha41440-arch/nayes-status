@@ -30,7 +30,8 @@
   $("arr-next").innerHTML = icon("chevLeft", 26);
   $("search-btn").innerHTML = icon("search", 24);
   $("search-back").innerHTML = icon("back", 24);
-  $("adv-face").innerHTML = icon("megaphone", 24, 1.7);
+  $("fab-mini").innerHTML = icon("pencil", 20, 2);
+  $("fab-mini").onclick = () => { $("bell-btn").click(); setTimeout(() => { const t = $("bell-text"); if (t) { t.scrollIntoView({ block: "center" }); t.focus(); } }, 300); };
   $("fab").innerHTML = icon("play", 26);
   $("nav-updates").innerHTML = icon("updates", 24, 1.8);
   $("nav-search-ic").innerHTML = icon("search", 24);

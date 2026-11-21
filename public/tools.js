@@ -42,20 +42,37 @@
     return n ? `${n[0]} ${fmt(n[1])}` : `הנץ מחר ${fmt(Z.dayTimes(city, Z.nextYMD(Z.israelYMD(new Date()))).sunrise)}`;
   }
 
+  // שני ערוצים נעוצים בראש רשימת הערוצים (כמו צ'אט נעוץ): זמני היום ופיקוד העורף
+  function renderPinned() {
+    const box = $("pinned");
+    if (!box) return;
+    const o = state.oref[0];
+    const row = (key, ic, name, last, end) => `<button class="chan" data-tool="${key}">
+      <div class="av plain" style="--s:52px"><span class="face ic" style="background:${CHANNEL_COLORS[ic]}">${icon(ic, 24, 1.7)}</span></div>
+      <span class="mid"><b>${esc(name)}</b><span class="last">${esc(last)}</span></span>
+      <span class="end"><span class="t">${esc(end)}</span><span class="pin-ic">${icon("pin", 16, 1.8)}</span></span></button>`;
+    const city = getPrefs().city || "ירושלים";
+    box.innerHTML = row("zmanim", "zmanim", `זמני היום · ${city}`, nextZman(), "")
+      + row("oref", "oref", "פיקוד העורף", o ? o.text.replace(/\s+/g, " ").slice(0, 90) : "הנחיות וטלפונים לשעת חירום", o ? timeAgo(o.date) : "");
+    box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
+  }
+
+  // "גלו עוד": כרטיסים בסגנון "ערוצים מומלצים" בסטטוס, עם כפתור בתחתית
   function renderTools() {
+    renderPinned();
     const box = $("tools");
     if (!box) return;
-    const city = getPrefs().city;
-    const tool = (key, ic, name, sub) => `<button class="tool" data-tool="${key}">
-      <span class="t-ic" style="background:${CHANNEL_COLORS[ic] || CHANNEL_COLORS.general}">${icon(ic, 26, 1.7)}</span>
-      <b>${esc(name)}</b><small>${esc(sub)}</small></button>`;
+    const city = getPrefs().city || "ירושלים";
+    const card = (key, ic, name, sub, btn) => `<div class="disc">
+      <span class="d-ic" style="background:${CHANNEL_COLORS[ic] || CHANNEL_COLORS.general}">${icon(ic, 30, 1.6)}</span>
+      <b>${esc(name)}</b><small>${esc(sub)}</small>
+      <button class="follow" data-tool="${key}">${esc(btn)}</button></div>`;
     box.innerHTML = [
-      tool("zmanim", "zmanim", "זמני היום", nextZman()),
-      tool("oref", "oref", "פיקוד העורף", state.oref[0] ? timeAgo(state.oref[0].date) : "הנחיות"),
-      tool("city", "city", city || "העיר שלי", "מבזקים מהעיר"),
-      tool("consumer", "consumer", "צרכנות", "ריקולים ומחירים"),
-      lastYear.length ? tool("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`) : "",
-      tool("share", "share", "שיתוף", "וואטסאפ, מייל ועוד"),
+      card("city", "city", city, "מבזקים מהעיר", "פתיחה"),
+      card("consumer", "consumer", "צרכנות", "ריקולים ומחירים", "פתיחה"),
+      lastYear.length ? card("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`, "צפייה") : "",
+      card("share", "share", "שיתוף", "וואטסאפ, מייל ועוד", "שיתוף"),
+      card("ads", "megaphone", "פרסום אצלנו", "העסק שלך בסטטוס", "פרטים"),
     ].join("");
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
@@ -79,6 +96,7 @@
     },
     memory: () => window.nayesStatus.openList(lastYear),
     share: shareSite,
+    ads: () => { location.href = "/about?topic=ads#contact"; },
   };
 
   // ---------- שיתוף האתר ----------
