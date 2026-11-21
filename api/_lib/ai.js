@@ -53,7 +53,9 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
 - category: אחד מהמפתחות: ${Object.keys(CATEGORIES).join(", ")}.
 - city: אם הידיעה מקומית לאחת הערים ${CITIES.join(", ")}, כתוב את שם העיר. אחרת מחרוזת ריקה.
 - is_breaking: true רק לאירוע דחוף ומשמעותי שקורה עכשיו.
-- ai_notes: הערות קצרות לעורך האנושי: ספקות, מה לאמת, רגישויות. אם הכל ברור, מחרוזת ריקה.
+- ai_notes: הערות קצרות לעורך האנושי (מידע בלבד). אם הכל ברור, מחרוזת ריקה.
+- needs_review: true רק במקרה רציני שבו אסור לפרסם בלי בדיקה של אדם: טענה רגישה שלא מאומתת,
+  אסון, פטירה או פיגוע, חשד פלילי נגד אדם מזוהה, או חשש ללשון הרע. בכל מקרה אחר false (המבזק יתפרסם אוטומטית).
 - reject_reason: אם relevant=false, סיבה קצרה. אחרת מחרוזת ריקה.
 - image_query: 2-4 מילים באנגלית לחיפוש תמונת אווירה במאגר תמונות חופשי. תאר חפץ, מקום או סמל שמתאים לנושא
   (למשל "train station platform", "shekel coins", "hospital corridor", "rain on window"). בלי אנשים ובלי פרצופים.
@@ -73,11 +75,12 @@ const ARTICLE_SCHEMA = {
     city: { type: "string" },
     is_breaking: { type: "boolean" },
     ai_notes: { type: "string" },
+    needs_review: { type: "boolean" },
     image_query: { type: "string" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "image_query",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query",
   ],
   additionalProperties: false,
 };

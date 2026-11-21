@@ -301,7 +301,8 @@ async function main() {
       }
     }
 
-    const publishNow = AUTO_PUBLISH && !art.ai_notes;
+    // פרסום אוטומטי, חוץ ממקרים רציניים שהעורך סימן לבדיקה של אדם
+    const publishNow = AUTO_PUBLISH && !art.needs_review;
     const row = {
       ...base,
       title: art.title,
