@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { mailOwner } from "./_lib/mailer.js";
 import { db } from "./_lib/db.js";
 
 // טופס יצירת קשר. הפנייה נשמרת בלוח הבקרה ונשלחת למייל של בעל האתר.
@@ -58,15 +58,9 @@ export default async function handler(req, res) {
   res.status(200).json({ ok: true });
 }
 
-// שליחה למייל של בעל האתר דרך חשבון ה-Gmail שלו (סיסמת אפליקציה).
+// שליחה למייל של בעל האתר.
 async function notifyEmail(msg) {
-  const to = process.env.CONTACT_EMAIL;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!to || !pass) return;
-  const transport = nodemailer.createTransport({ service: "gmail", auth: { user: to, pass } });
-  await transport.sendMail({
-    from: `"נייעס סטטוס" <${to}>`,
-    to,
+  await mailOwner({
     replyTo: msg.email || undefined,
     subject: `נייעס סטטוס: ${TOPICS[msg.topic]} מאת ${msg.name}`,
     text:

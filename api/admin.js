@@ -1,12 +1,22 @@
 import { db, makeSlug } from "./_lib/db.js";
-import { checkPassword, issueToken, verifyToken, tokenFromRequest } from "./_lib/auth.js";
+import {
+  checkPassword, issueToken, verifyToken, tokenFromRequest, deviceFromRequest, deviceHash,
+  newCode, hashCode, codeMatches, signApproval, checkApproval,
+} from "./_lib/auth.js";
 import { writeArticle } from "./_lib/ai.js";
-import { fetchImage, decodeDataUrl, checkAndStore } from "./_lib/media.js";
+import { fetchImage, decodeDataUrl, checkAndStore, checkVideoFrames, createVideoUpload, isStoredName } from "./_lib/media.js";
+import { mailConfigured, mailOwner } from "./_lib/mailer.js";
 import { CATEGORIES } from "./_lib/config.js";
 
 // API של לוח הבקרה. כל הבקשות: POST עם { action, ... }.
 //
-// login     { password }                     → { token }
+// login     { password, deviceId, pairCode? } → { token } רק ממכשיר מורשה (הראשון נרשם אוטומטית)
+// mailPairCode {}                            → שולח קוד לאישור מכשיר חדש למייל של בעל האתר (אם מכשיר אבד)
+// devicesList {} / deviceRemove { id }       → המכשירים המורשים
+// pairStart {}                               → קוד חד-פעמי לאישור מכשיר נוסף (מוצג במכשיר מורשה)
+// checkVideo { frames }                      → בדיקת AI לפריימים מהסרטון; אם עבר: כתובת העלאה + אישור חתום
+// attachVideo { id, name, approval, poster, sound } → שיוך הסרטון שהועלה לידיעה
+// setVideoSound { id, sound }                → קול בסרטון (רק אחרי שהמנהל שמע ואישר)
 // list      { status }                       → { articles }
 // update    { id, fields }                   → עדכון שדות של ידיעה
 // publish   { id }                           → פרסום
@@ -47,21 +57,58 @@ export default async function handler(req, res) {
   const { action } = body;
 
   try {
-    if (action === "login") {
-      const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0] || "unknown";
-      if (tooManyAttempts(ip)) {
-        res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
-        return;
-      }
-      if (!checkPassword(body.password)) {
-        res.status(401).json({ error: "סיסמה שגויה" });
-        return;
-      }
-      res.status(200).json({ token: issueToken() });
-      return;
+    const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0] || "unknown";
+
+    if (action === "mailPairCode") {
+      if (!mailConfigured()) return res.status(400).json({ error: "שליחת מייל עדיין לא הוגדרה" });
+      if (tooManyAttempts(ip)) return res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
+      const code = await createPairCode();
+      if (!code) return res.status(429).json({ error: "קוד כבר נשלח. אפשר לבקש קוד חדש בעוד דקה." });
+      await mailOwner({
+        subject: `קוד לאישור מכשיר חדש בנייעס סטטוס: ${code}`,
+        text: `קוד לאישור מכשיר חדש בלוח הבקרה של נייעס סטטוס: ${code}\n\nהקוד תקף ל-10 דקות.\nאם לא ביקשת, אפשר להתעלם מההודעה. בלי הסיסמה אי אפשר להיכנס.`,
+      });
+      return res.status(200).json({ sent: true });
     }
 
-    if (!verifyToken(tokenFromRequest(req))) {
+    if (action === "login") {
+      if (tooManyAttempts(ip)) return res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
+      if (!checkPassword(body.password)) return res.status(401).json({ error: "סיסמה שגויה" });
+      const dh = deviceHash(body.deviceId);
+      if (!dh) return res.status(400).json({ error: "מזהה מכשיר חסר" });
+
+      const { data: known } = await db().from("trusted_devices").select("id").eq("device_hash", dh).maybeSingle();
+      if (!known) {
+        const { count } = await db().from("trusted_devices").select("id", { count: "exact", head: true });
+        let allowed = count === 0; // המכשיר הראשון נרשם אוטומטית
+        if (!allowed && body.pairCode) {
+          const { data: rec } = await db().from("admin_codes").select("*").eq("id", 1).maybeSingle();
+          if (rec && Date.parse(rec.expires_at) > Date.now() && rec.attempts < 5) {
+            if (codeMatches(body.pairCode, rec.code_hash)) {
+              allowed = true;
+              await db().from("admin_codes").delete().eq("id", 1);
+            } else {
+              await db().from("admin_codes").update({ attempts: rec.attempts + 1 }).eq("id", 1);
+            }
+          }
+        }
+        if (!allowed) {
+          return res.status(403).json({ needPair: true, error: "המכשיר הזה לא מורשה. צריך קוד לאישור מכשיר חדש." });
+        }
+        const label = String(req.headers["user-agent"] || "").slice(0, 160);
+        const { error } = await db().from("trusted_devices").insert({ device_hash: dh, label });
+        if (error) throw error;
+      } else {
+        await db().from("trusted_devices").update({ last_seen: new Date().toISOString() }).eq("id", known.id);
+      }
+      return res.status(200).json({ token: issueToken(dh) });
+    }
+
+    const dh = verifyToken(tokenFromRequest(req), deviceFromRequest(req));
+    const { data: trusted } = dh
+      ? await db().from("trusted_devices").select("id").eq("device_hash", dh).maybeSingle()
+      : { data: null };
+    if (!trusted) {
       res.status(401).json({ error: "נדרשת כניסה מחדש" });
       return;
     }
@@ -226,6 +273,59 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      case "checkVideo": {
+        const check = await checkVideoFrames(body.frames);
+        if (!check.approved) return res.status(200).json({ approved: false, reason: check.reason });
+        const upload = await createVideoUpload(String(body.type || ""));
+        return res.status(200).json({
+          approved: true, reason: check.reason, posterUrl: check.posterUrl,
+          name: upload.name, uploadUrl: upload.uploadUrl,
+          approval: signApproval(`${upload.name}|${check.posterUrl}`),
+        });
+      }
+
+      case "attachVideo": {
+        const name = String(body.name || "");
+        const poster = String(body.poster || "");
+        if (!isStoredName(name) || !checkApproval(`${name}|${poster}`, body.approval)) {
+          return res.status(403).json({ error: "הסרטון לא אושר בבדיקה" });
+        }
+        const { error } = await db().from("articles")
+          .update({ video_url: `/media/${name}`, image_url: poster || null, video_sound: Boolean(body.sound) }).eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true, url: `/media/${name}` });
+      }
+
+      case "setVideoSound": {
+        const { error } = await db().from("articles").update({ video_sound: Boolean(body.sound) }).eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
+      case "removeVideo": {
+        const { error } = await db().from("articles").update({ video_url: null, video_sound: false }).eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
+      case "devicesList": {
+        const { data, error } = await db().from("trusted_devices").select("id,label,created_at,last_seen").order("created_at");
+        if (error) throw error;
+        return res.status(200).json({ devices: data, current: trusted.id });
+      }
+
+      case "deviceRemove": {
+        if (body.id === trusted.id) return res.status(400).json({ error: "אי אפשר להסיר את המכשיר שאתה מחובר ממנו" });
+        const { error } = await db().from("trusted_devices").delete().eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
+      case "pairStart": {
+        const code = await createPairCode(true);
+        return res.status(200).json({ code });
+      }
+
       case "messagesList": {
         const { data, error } = await db().from("messages").select("*").order("created_at", { ascending: false }).limit(200);
         if (error) throw error;
@@ -245,6 +345,19 @@ export default async function handler(req, res) {
     console.error(err);
     res.status(500).json({ error: "שגיאת שרת: " + (err.message || "") });
   }
+}
+
+// קוד חד-פעמי לאישור מכשיר חדש (תקף 10 דקות). force: גם אם נוצר קוד לפני פחות מדקה.
+async function createPairCode(force = false) {
+  const { data: prev } = await db().from("admin_codes").select("created_at").eq("id", 1).maybeSingle();
+  if (!force && prev && Date.now() - Date.parse(prev.created_at) < 60000) return null;
+  const code = newCode();
+  const { error } = await db().from("admin_codes").upsert({
+    id: 1, code_hash: hashCode(code), attempts: 0,
+    expires_at: new Date(Date.now() + 10 * 60000).toISOString(), created_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+  return code;
 }
 
 function clean(v) {

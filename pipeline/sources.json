@@ -4,6 +4,7 @@
     "url": "https://example.com/rss.xml",
     "category": "",
     "city": "",
+    "images": false,
     "enabled": false
   },
   {
@@ -11,6 +12,7 @@
     "url": "https://example.org/feed",
     "category": "local",
     "city": "בני ברק",
+    "images": false,
     "enabled": false
   }
 ]

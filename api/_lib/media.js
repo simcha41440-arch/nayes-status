@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { db } from "./db.js";
-import { checkImage } from "./ai.js";
+import { checkImage, checkFrames } from "./ai.js";
 
 // כל התמונות באתר מאוחסנות אצלנו ומוגשות מהדומיין של האתר (/media/...),
 // כך שהגולש לא מתחבר לאף שרת חיצוני. לפני שמירה, כל תמונה עוברת בדיקת AI.
@@ -8,6 +8,9 @@ import { checkImage } from "./ai.js";
 const BUCKET = "media";
 const MAX_BYTES = 4 * 1024 * 1024;
 const TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+const VIDEO_TYPES = { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
+
+const newName = (ext) => `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
 
 /** מוריד תמונה מכתובת חיצונית (רק בצד השרת). */
 export async function fetchImage(url) {
@@ -36,16 +39,42 @@ export async function checkAndStore({ buffer, type }) {
   const check = await checkImage({ base64: buffer.toString("base64"), mediaType: type });
   if (!check.approved) return check;
 
-  const name = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}.${TYPES[type]}`;
+  const name = newName(TYPES[type]);
   const { error } = await db().storage.from(BUCKET).upload(name, buffer, { contentType: type, upsert: false });
   if (error) throw error;
   return { ...check, url: `/media/${name}` };
 }
 
-/** מחזיר קובץ שמור להגשה לגולש. */
-export async function readStored(name) {
-  if (!/^[a-z0-9-]+\.(jpg|png|webp|gif)$/i.test(name)) return null;
-  const { data, error } = await db().storage.from(BUCKET).download(name);
-  if (error || !data) return null;
-  return { buffer: Buffer.from(await data.arrayBuffer()), type: data.type || "image/jpeg" };
+// ---------- סרטונים ----------
+// הדפדפן של המנהל שולף פריימים מהסרטון ושולח אותם לבדיקה. רק אם כולם עברו,
+// השרת נותן כתובת העלאה חד-פעמית, והסרטון עולה ישר לאחסון.
+
+export async function checkVideoFrames(frameDataUrls) {
+  if (!Array.isArray(frameDataUrls) || frameDataUrls.length < 3) throw new Error("לא התקבלו מספיק פריימים לבדיקה");
+  if (frameDataUrls.length > 60) throw new Error("יותר מדי פריימים");
+  const frames = frameDataUrls.map((d) => {
+    const f = decodeDataUrl(d);
+    return { base64: f.buffer.toString("base64"), mediaType: f.type, buffer: f.buffer };
+  });
+  const check = await checkFrames(frames);
+  if (!check.approved) return check;
+
+  // הפריים הראשון נשמר כתמונת תצוגה של הסרטון (הוא כבר נבדק יחד עם השאר)
+  const poster = newName("jpg");
+  const { error } = await db().storage.from(BUCKET).upload(poster, frames[0].buffer, { contentType: frames[0].mediaType });
+  if (error) throw error;
+  return { ...check, posterUrl: `/media/${poster}` };
+}
+
+export async function createVideoUpload(type) {
+  const ext = VIDEO_TYPES[type];
+  if (!ext) throw new Error("סוג סרטון לא נתמך. אפשר MP4, WEBM או MOV");
+  const name = newName(ext);
+  const { data, error } = await db().storage.from(BUCKET).createSignedUploadUrl(name);
+  if (error) throw error;
+  return { name, uploadUrl: data.signedUrl };
+}
+
+export function isStoredName(name) {
+  return /^[a-z0-9]+-[a-f0-9]{12}\.(jpg|png|webp|gif|mp4|webm|mov)$/i.test(name);
 }

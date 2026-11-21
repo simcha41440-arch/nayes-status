@@ -20,6 +20,8 @@ create table if not exists articles (
   source_url    text,
   source_hash   text unique,            -- מונע כפילויות מאותו מקור
   image_url     text,                   -- רק תמונה שעברה בדיקה ואושרה
+  video_url     text,                   -- רק סרטון שכל הפריימים שלו נבדקו ואושרו
+  video_sound   boolean not null default false, -- קול רק אחרי שהמנהל שמע ואישר
   ai_notes      text,
   views         integer not null default 0,
   reactions     jsonb not null default '{}'::jsonb,
@@ -81,7 +83,7 @@ $$;
 -- ---------- אחסון תמונות ----------
 -- תיקייה פרטית: התמונות מוגשות לגולשים רק דרך האתר עצמו (/media/...).
 insert into storage.buckets (id, name, public)
-values ('media', 'media', false)
+values ('media', 'media', true)
 on conflict (id) do nothing;
 
 -- ---------- פניות מטופס יצירת הקשר ----------
@@ -96,3 +98,23 @@ create table if not exists messages (
   created_at  timestamptz not null default now()
 );
 alter table messages enable row level security;
+
+-- ---------- כניסה ללוח הבקרה: קוד לאישור מכשיר חדש ----------
+create table if not exists admin_codes (
+  id          int primary key default 1,
+  code_hash   text not null,
+  expires_at  timestamptz not null,
+  attempts    int not null default 0,
+  created_at  timestamptz not null default now()
+);
+alter table admin_codes enable row level security;
+
+-- מכשירים מורשים לכניסה ללוח הבקרה (נשמרת רק "טביעה" של מזהה המכשיר)
+create table if not exists trusted_devices (
+  id           uuid primary key default gen_random_uuid(),
+  device_hash  text unique not null,
+  label        text,
+  created_at   timestamptz not null default now(),
+  last_seen    timestamptz
+);
+alter table trusted_devices enable row level security;

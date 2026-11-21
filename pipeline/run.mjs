@@ -13,6 +13,7 @@ import { readFile } from "node:fs/promises";
 import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
 import { writeArticle } from "../api/_lib/ai.js";
+import { fetchImage, checkAndStore } from "../api/_lib/media.js";
 
 const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);
 const MAX_AGE_HOURS = Number(process.env.MAX_AGE_HOURS || 12);
@@ -21,7 +22,20 @@ const AUTO_PUBLISH = process.env.AUTO_PUBLISH === "true";
 const MIN_SCORE = Number(process.env.MIN_SCORE || 6);
 const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
 
-const parser = new Parser({ timeout: 15000 });
+const parser = new Parser({
+  timeout: 15000,
+  customFields: { item: [["media:content", "mediaContent", { keepArray: true }], ["media:thumbnail", "mediaThumb"]] },
+});
+
+// כתובת התמונה של הידיעה מהפיד (אם יש): enclosure, media:content, media:thumbnail או התמונה הראשונה בתוכן.
+function imageFromItem(it) {
+  if (it.enclosure && /^image\//.test(it.enclosure.type || "") && it.enclosure.url) return it.enclosure.url;
+  const mc = (it.mediaContent || []).find((m) => m && m.$ && m.$.url && (!m.$.medium || m.$.medium === "image"));
+  if (mc) return mc.$.url;
+  if (it.mediaThumb && it.mediaThumb.$ && it.mediaThumb.$.url) return it.mediaThumb.$.url;
+  const m = /<img[^>]+src=["']([^"']+)["']/i.exec(it["content:encoded"] || it.content || "");
+  return m ? m[1] : null;
+}
 
 const hash = (s) => crypto.createHash("sha256").update(s).digest("hex").slice(0, 32);
 
@@ -54,6 +68,7 @@ async function collectItems(sources) {
           source: src,
           hash: hash(`${src.name}|${link}`),
           link: it.link || null,
+          image: src.images ? imageFromItem(it) : null,
           when,
           text: [it.title, stripHtml(it["content:encoded"] || it.content || it.contentSnippet || "")]
             .filter(Boolean)
@@ -145,6 +160,18 @@ async function main() {
       continue;
     }
 
+    // תמונה אוטומטית: רק ממקורות שסומנו "images": true, ורק אם עברה בדיקה (בלי נשים וכו').
+    let imageUrl = null;
+    if (item.image && /^https:\/\//.test(item.image)) {
+      try {
+        const stored = await checkAndStore(await fetchImage(item.image));
+        if (stored.approved) imageUrl = stored.url;
+        else console.log(`  תמונה נפסלה: ${stored.reason}`);
+      } catch (err) {
+        console.log(`  תמונה לא נטענה: ${err.message}`);
+      }
+    }
+
     const publishNow = AUTO_PUBLISH && !art.ai_notes;
     const { error } = await db().from("articles").insert({
       ...base,
@@ -157,6 +184,7 @@ async function main() {
       city: art.city || item.source.city || null,
       is_breaking: art.is_breaking,
       ai_notes: art.ai_notes || null,
+      image_url: imageUrl,
       status: publishNow ? "published" : "pending",
       published_at: publishNow ? new Date().toISOString() : null,
     });

@@ -26,7 +26,7 @@
     .tab { font: inherit; font-weight: 800; border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 8px 16px; border-radius: 99px; cursor: pointer; white-space: nowrap; }
     .tab.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
     .tab .n { background: var(--accent); color: #fff; border-radius: 99px; padding: 0 7px; font-size: 13px; margin-inline-start: 4px; }
-    .panel { max-width: 900px; margin: 0 auto; padding: 16px; }
+    .apanel { max-width: 900px; margin: 0 auto; padding: 16px; }
     .item { background: var(--bg); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; border-top: 3px solid var(--ink); }
     .item.breaking { border-top-color: var(--accent); }
     .item label { display: block; font-size: 13px; font-weight: 800; color: var(--muted); margin: 10px 0 4px; }
@@ -67,6 +67,11 @@
   <form class="login hidden" id="login">
     <h1>כניסה לעורך</h1>
     <input type="password" id="password" placeholder="סיסמה" autocomplete="current-password" required>
+    <div id="pair-step" class="hidden" style="margin-top:12px;text-align:right">
+      <p style="margin:0 0 8px;color:var(--muted);font-size:14.5px">המכשיר הזה עוד לא מורשה. הכנס קוד לאישור מכשיר חדש. את הקוד מקבלים בלוח הבקרה במכשיר מורשה (לשונית "מכשירים"), או במייל.</p>
+      <input type="text" id="pair-code" inputmode="numeric" maxlength="6" placeholder="קוד אישור" dir="ltr" style="text-align:center;font-size:20px;letter-spacing:6px">
+      <button type="button" class="btn ghost" id="mail-code" style="width:100%;margin-top:8px">שלחו לי קוד למייל</button>
+    </div>
     <button class="btn" type="submit">כניסה</button>
     <p class="msg bad" id="login-msg"></p>
   </form>
@@ -78,8 +83,9 @@
       <button class="tab" data-tab="compose">✍️ מבזק מהודעה</button>
       <button class="tab" data-tab="ads">📣 פרסומות</button>
       <button class="tab" data-tab="messages">📩 פניות</button>
+      <button class="tab" data-tab="devices">🔒 מכשירים</button>
     </div>
-    <div class="panel" id="panel"></div>
+    <div class="apanel" id="panel"></div>
   </div>
 
   <script src="/common.js"></script>

@@ -150,3 +150,20 @@ export async function checkImage({ base64, mediaType }) {
   if (result.refused) return { approved: false, reason: "הבדיקה נכשלה, התמונה נפסלה" };
   return result;
 }
+
+const VIDEO_SYSTEM = `${IMAGE_SYSTEM}
+
+אתה מקבל סדרת פריימים מתוך סרטון אחד, לפי הסדר. בדוק כל פריים בנפרד.
+אם אפילו פריים אחד בעייתי, פסול את כל הסרטון (approved=false) וציין בעיה באיזה פריים.`;
+
+/** בודק פריימים מתוך סרטון (רשימת קבצים בקידוד base64). */
+export async function checkFrames(frames) {
+  const content = frames.map((f, i) => [
+    { type: "text", text: `פריים ${i + 1}:` },
+    { type: "image", source: { type: "base64", media_type: f.mediaType, data: f.base64 } },
+  ]).flat();
+  content.push({ type: "text", text: `אלה ${frames.length} פריימים מתוך סרטון אחד. בדוק את כולם לפי המדיניות.` });
+  const result = await askJson({ system: VIDEO_SYSTEM, maxTokens: 3000, schema: IMAGE_SCHEMA, content });
+  if (result.refused) return { approved: false, reason: "הבדיקה נכשלה, הסרטון נפסל" };
+  return result;
+}

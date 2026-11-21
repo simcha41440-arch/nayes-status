@@ -1,7 +1,7 @@
 // Service worker: שומר את קבצי האתר במטמון כדי שייפתח מהר, גם כשהחיבור חלש.
 // מבזקים ומודעות תמיד נטענים מהרשת (ורק אם אין רשת, מהעותק האחרון).
 
-const VERSION = "nayes-v5";
+const VERSION = "nayes-v6";
 const SHELL = [
   "/", "/index.html", "/styles.css", "/common.js", "/prefs.js", "/status.js", "/pwa.js",
   "/fonts/fonts.css", "/favicon.svg", "/manifest.webmanifest",
@@ -24,6 +24,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;
   if (url.pathname.startsWith("/admin") || url.pathname === "/api/admin") return;
+  if (url.pathname.startsWith("/media/")) return; // תמונות וסרטונים: ישר מהרשת (סרטונים נטענים בחלקים)
 
   // מבזקים ומודעות: קודם רשת
   if (url.pathname.startsWith("/api/")) {

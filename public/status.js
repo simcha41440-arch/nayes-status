@@ -327,7 +327,36 @@
     viewer.raf = requestAnimationFrame(tick);
   }
 
+  // סרטון: משך הסטטוס לפי אורך הסרטון (עד דקה). קול רק בסרטון שהמנהל שמע ואישר.
+  let soundOn = true;
+  function setupVideo(a) {
+    const v = $("s-video");
+    if (!v) return;
+    viewer.dur = 15000;
+    v.onloadedmetadata = () => {
+      if (isFinite(v.duration) && v.duration > 0) viewer.dur = Math.min(v.duration, 60) * 1000;
+    };
+    const btn = $("sound-btn");
+    const paint = () => { if (btn) btn.innerHTML = icon(v.muted ? "soundOff" : "soundOn", 24); };
+    const play = async () => {
+      v.muted = !(a.video_sound && soundOn);
+      try { await v.play(); }
+      catch { v.muted = true; try { await v.play(); } catch {} } // הדפדפן חסם קול: מנגנים בשקט
+      paint();
+    };
+    if (btn) btn.onclick = (e) => {
+      e.stopPropagation();
+      soundOn = v.muted;
+      v.muted = !soundOn;
+      if (!v.muted) v.play().catch(() => {});
+      paint();
+    };
+    play();
+  }
+
   function setPaused(p) {
+    const v = $("s-video");
+    if (v) { if (p) v.pause(); else v.play().catch(() => {}); }
     viewer.paused = p;
     $("stage").classList.toggle("paused", p && !$("panel").classList.contains("open"));
   }
@@ -357,11 +386,16 @@
 
     const title = esc(a.title);
     const hotTag = a.is_breaking ? `<span class="hot-pill">${icon("hot", 15, 2)} דחוף</span>` : "";
-    $("s-media").innerHTML = a.image_url
+    $("s-media").innerHTML = a.video_url
+      ? `<div class="s-img"><video id="s-video" src="${esc(a.video_url)}" ${a.image_url ? `poster="${esc(a.image_url)}"` : ""} playsinline muted preload="auto"></video></div>
+         ${a.video_sound ? `<button class="ico sound-btn" id="sound-btn" aria-label="קול"></button>` : ""}
+         <div class="s-caption"><b>${title}</b>${a.summary ? `<span>${esc(a.summary)}</span>` : ""}</div>`
+      : a.image_url
       ? `<div class="s-img"><img src="${esc(a.image_url)}" alt=""></div>
          <div class="s-caption"><b>${title}</b>${a.summary ? `<span>${esc(a.summary)}</span>` : ""}</div>`
       : `<div class="s-text fade">${hotTag}<h2>${title}</h2>${a.summary ? `<p>${esc(a.summary)}</p>` : ""}
          ${a.impact ? `<p class="tip">מה זה אומר עליך? ${esc(a.impact)}</p>` : ""}</div>`;
+    setupVideo(a);
 
     $("s-foot").innerHTML = `
       <button class="chev" id="chev" aria-label="עוד">${ICON_CHEV}</button>
