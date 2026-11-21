@@ -203,7 +203,6 @@
     const mutedChs = all.filter((c) => c.muted);
     // קודם ערוצים עם עדכונים חדשים, אחר כך מה שנצפה
     const ordered = [...chs.filter((c) => unseen(c.items)), ...chs.filter((c) => !unseen(c.items))];
-    const tops = ads.filter((a) => a.placement === "top");
 
     const cardHtml = (ch) => {
       const latest = ch.items[0];
@@ -219,7 +218,6 @@
 
     const cards = ordered.map(cardHtml);
     // כרטיס ממומן במקום השני בשורה, הכי בולט
-    tops.forEach((ad, i) => cards.splice(Math.min(1 + i * 3, cards.length), 0, adCard(ad, ads.indexOf(ad))));
     $("cards").innerHTML = cards.join("");
 
     const chanRow = (ch) => {
@@ -289,7 +287,8 @@
   function openChannel(chKey, slug) {
     const ch = channels().find((c) => c.key === chKey) || channels()[0];
     const news = [...ch.items].sort((a, b) => Date.parse(a.published_at) - Date.parse(b.published_at));
-    const pool = ads.filter((a) => a.placement === "feed").concat(ads.filter((a) => a.placement === "top"));
+    // פרסומות: רק כסטטוס ממומן בין הסטטוסים, בדיוק כמו בסטטוס של וואטסאפ
+    const pool = ads;
     const seq = [];
     let k = 0;
     news.forEach((a, i) => {
@@ -525,15 +524,10 @@
     $("v-menu").onclick = (e) => e.stopPropagation();
   }
 
+  // בסטטוס אין מודעות בצד המסך
   function renderSide() {
-    const side = ads.filter((a) => a.placement === "side");
-    // מודעת צד מופיעה רק כשיש מפרסם. בלי מפרסם: אין כלום (בלי "המקום פנוי").
-    $("v-side").style.display = side.length ? "" : "none";
-    $("v-side").innerHTML = !side.length ? "" : `<span class="lbl">ממומן</span>` + (side.length
-      ? side.map((ad) => `<a class="side-ad" href="${adHref(ad)}" ${DEMO_MODE ? "" : 'target="_blank" rel="noopener sponsored"'} style="--ad-c:${esc(ad.color || "#243640")}">
-          ${ad.image_url ? `<img src="${esc(ad.image_url)}" alt="">` : ""}
-          <b>${esc(ad.title)}</b>${ad.text ? `<p>${esc(ad.text)}</p>` : ""}<span class="go">${esc(ad.cta || "לפרטים")}</span></a>`).join("")
-      : "");
+    $("v-side").style.display = "none";
+    $("v-side").innerHTML = "";
   }
 
   // ---------- שליטה ----------

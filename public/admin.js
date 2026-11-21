@@ -403,7 +403,8 @@
   }
 
   // ---------- פרסומות ----------
-  const PLACEMENTS = { top: "📌 נעוצה למעלה", feed: "✨ סטטוס ממומן", side: "🖥️ צד המסך (מחשב)" };
+  // כמו בסטטוס של וואטסאפ: פרסומת מופיעה רק כסטטוס ממומן בין הסטטוסים
+  const PLACEMENTS = { feed: "✨ סטטוס ממומן (בין הסטטוסים)" };
 
   async function renderAds(panel) {
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
@@ -430,7 +431,7 @@
       el.style.borderTopColor = ad.color || "var(--ink)";
       const ctr = ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : "0";
       el.innerHTML = `
-        <div class="src">${esc(PLACEMENTS[ad.placement])} · ${ad.active ? "🟢 פעילה" : "⏸ מושהית"}
+        <div class="src">${esc(PLACEMENTS.feed)} · ${ad.active ? "🟢 פעילה" : "⏸ מושהית"}
           ${ad.ends_at ? ` · עד ${esc(new Date(ad.ends_at).toLocaleDateString("he-IL"))}` : ""}</div>
         <h3 style="margin:6px 0 2px">${esc(ad.title)}</h3>
         <div>${esc(ad.advertiser)}${ad.text ? " · " + esc(ad.text) : ""}</div>
