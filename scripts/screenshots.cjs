@@ -67,5 +67,14 @@ require("fs").mkdirSync(out, { recursive: true });
     await d.goto(`${SITE}/article/${news[0].slug}`, { waitUntil: "networkidle" }); await d.waitForTimeout(1500);
     await d.screenshot({ path: `${out}/41-מחשב-מבזק.png` }); console.log("✓ desktop story");
   }
+  await d.goto(SITE + "/", { waitUntil: "networkidle" }); await d.waitForTimeout(1200);
+  await d.evaluate(() => window.scrollTo(0, 600)); await d.waitForTimeout(400);
+  await d.screenshot({ path: `${out}/42-מחשב-ערוצים.png` });
+  await d.evaluate(() => window.scrollTo(0, 0));
+  await d.click('[data-tool="zmanim"]'); await d.waitForTimeout(700);
+  await d.screenshot({ path: `${out}/43-מחשב-זמני-היום.png` });
+  await d.goto(SITE + "/settings", { waitUntil: "networkidle" }); await d.waitForTimeout(1000);
+  await d.screenshot({ path: `${out}/44-מחשב-הגדרות.png` });
+  console.log("✓ desktop extra");
   await b.close();
 })().catch((e) => { console.error(e); process.exit(1); });
