@@ -16,6 +16,7 @@
   render();
 
   function isOwner() { try { return Boolean(localStorage.getItem("nayes_profile")); } catch { return false; } }
+  const account = () => (window.nayesUser && window.nayesUser.info()) || null;
 
   function row({ id, ic, title, sub, toggle, checked, danger, href }) {
     const inner = `${icon(ic, 24, 1.7)}<span class="txt"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>
@@ -29,6 +30,10 @@
     const p = getPrefs();
     const muted = p.muted.map((k) => MUTABLE[k]).filter(Boolean);
     $("rows").innerHTML = `
+      <div class="set-sec">החשבון שלי</div>
+      ${account()
+        ? `${row({ ic: "chat", title: account().name || "מחובר", sub: account().email })}${row({ id: "logoutRow", ic: "back", title: "התנתקות" })}`
+        : row({ ic: "chat", title: "לא מחובר", sub: "מתחברים עם Google בעמוד הראשי" })}
       ${isOwner() ? `<div class="set-sec">ניהול</div>${row({ ic: "gear", title: "לוח הבקרה", sub: "מבזקים, פרסומות ופניות", href: "/admin" })}` : ""}
       <div class="set-sec">התראות</div>
       ${row({ id: "badge", ic: "badge", title: "סימון מבזקים חדשים", sub: "מספר על הלשונית בדפדפן ועל אייקון האפליקציה", toggle: true, checked: p.badge })}
@@ -67,6 +72,10 @@
     $("speed").onclick = () => choose("מהירות מעבר בין סטטוסים", SPEEDS, getPrefs().speed, (v) => { setPref("speed", v); render(); });
     $("muted").onclick = () => chooseMany("ערוצים מושתקים", MUTABLE, getPrefs().muted, (v) => { setPref("muted", v); render(); });
     $("seenAll").onclick = markAllSeen;
+    if ($("logoutRow")) $("logoutRow").onclick = () => confirmDlg("להתנתק?", "תצטרכו להתחבר שוב עם Google.", "התנתקות", () => {
+      try { localStorage.removeItem("nayes_profile"); } catch {}
+      window.nayesUser.logout();
+    });
     $("clear").onclick = () => confirmDlg("לנקות את היסטוריית הצפייה?", "כל המבזקים יופיעו שוב כחדשים.", "ניקוי", () => {
       try { localStorage.removeItem("nayes_seen"); } catch {}
       snack("היסטוריית הצפייה נוקתה");

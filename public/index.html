@@ -8,6 +8,8 @@
   <meta property="og:title" content="נייעס סטטוס">
   <meta property="og:description" content="רק מה ששווה לדעת.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.nayesstatus.com/">
+  <link rel="canonical" href="https://www.nayesstatus.com/">
   <meta name="theme-color" content="#0b141a">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -23,6 +25,7 @@
   <div class="app">
     <header class="appbar">
       <h1 style="flex:1">נייעס <em>סטטוס</em></h1>
+      <button class="menu-btn bell-btn" id="bell-btn" aria-label="התראות"></button>
       <button class="menu-btn" id="search-btn" aria-label="חיפוש"></button>
       <div class="menu-wrap">
         <button class="menu-btn" id="menu-btn" aria-label="אפשרויות נוספות" aria-haspopup="true"></button>
@@ -69,6 +72,26 @@
     <div id="search-results"></div>
   </div>
 
+  <div class="search" id="bell-panel" role="dialog" aria-label="התראות">
+    <div class="search-bar">
+      <button class="menu-btn" id="bell-back" aria-label="חזרה"></button>
+      <h2 style="margin:0;font-size:20px;font-weight:600">התראות</h2>
+    </div>
+    <div id="bell-list" style="max-width:640px;margin:0 auto"></div>
+    <form class="bell-form" id="bell-form">
+      <h3>שליחה למערכת נייעס סטטוס</h3>
+      <select id="bell-topic">
+        <option value="message">הודעה</option>
+        <option value="comment">תגובה</option>
+        <option value="update">עדכון / ידיעה שכדאי שנדע</option>
+        <option value="correction">תיקון או טעות</option>
+      </select>
+      <textarea id="bell-text" placeholder="כתבו כאן..." maxlength="3000" required></textarea>
+      <button class="btn" type="submit">שליחה</button>
+      <p class="form-msg" id="bell-msg"></p>
+    </form>
+  </div>
+
   <div class="viewer" id="viewer" aria-modal="true" role="dialog" aria-label="צפייה בסטטוס">
     <button class="ico v-close" id="v-x" aria-label="סגירה"></button>
     <button class="nav-arrow" id="arr-prev" aria-label="הקודם"></button>
@@ -86,6 +109,7 @@
   </div>
 
   <script src="/common.js"></script>
+  <script src="/user.js"></script>
   <script src="/status.js"></script>
   <script src="/pwa.js"></script>
 </body>

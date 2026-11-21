@@ -26,6 +26,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://www.nayesstatus.com' }}
           AUTO_VIDEO_SOUND: ${{ vars.AUTO_VIDEO_SOUND || 'true' }}   # קול בסרטונים אוטומטיים (false = בלי קול)
           AUTO_PUBLISH: ${{ vars.AUTO_PUBLISH || 'true' }}   # פרסום אוטומטי. מבזק שהעורך סימן בו ספק עדיין ימתין לאישור

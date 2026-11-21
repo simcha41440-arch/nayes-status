@@ -115,7 +115,13 @@ async function collectItems(sources) {
   const items = [];
   for (const src of sources) {
     try {
-      const feed = await parser.parseURL(src.url);
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 20000);
+      const res = await fetch(src.url, { signal: ctl.signal, headers: { "User-Agent": "Mozilla/5.0 (compatible; NayesStatusBot/1.0)" } });
+      const xml = await res.text();
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const feed = await parser.parseString(xml);
       for (const it of feed.items || []) {
         const when = it.isoDate ? Date.parse(it.isoDate) : Date.now();
         if (when < cutoff) continue;

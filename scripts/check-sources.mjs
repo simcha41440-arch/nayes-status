@@ -11,7 +11,13 @@ const list = JSON.parse(await readFile(new URL("../pipeline/candidates.json", im
 
 for (const s of list) {
   try {
-    const feed = await parser.parseURL(s.url);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    const r = await fetch(s.url, { signal: ctl.signal, headers: { "User-Agent": "Mozilla/5.0 (compatible; NayesStatusBot/1.0)" } });
+    const xml = await r.text();
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const feed = await parser.parseString(xml);
     const items = feed.items || [];
     const latest = items.map((i) => Date.parse(i.isoDate || "")).filter(Boolean).sort((a, b) => b - a)[0];
     const img = items.filter((i) => (i.enclosure && /image/.test(i.enclosure.type || "")) || i.mediaContent || i.mediaThumb || /<img/i.test(i.content || i["content:encoded"] || "")).length;

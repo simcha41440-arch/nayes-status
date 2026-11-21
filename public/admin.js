@@ -122,6 +122,7 @@
     if (tab === "compose") return renderCompose(panel);
     if (tab === "ads") return renderAds(panel);
     if (tab === "messages") return renderMessages(panel);
+    if (tab === "users") return renderUsers(panel);
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
     try {
       const { articles } = await call("list", { status: tab });
@@ -278,6 +279,73 @@
       } catch (err) { m.className = "msg bad"; m.textContent = err.message; }
       e.target.disabled = false;
     });
+  }
+
+  // ---------- משתמשים, כניסות והודעות לפעמון ----------
+  async function renderUsers(panel) {
+    panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
+    let r;
+    try { r = await call("usersList"); } catch (err) { panel.innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
+    const s = r.stats;
+    panel.innerHTML = `
+      <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+        <div><b>${s.online}</b><span>🟢 מחוברים עכשיו</span></div>
+        <div><b>${s.users}</b><span>משתמשים</span></div>
+        <div><b>${s.newToday}</b><span>חדשים היום</span></div>
+        <div><b>${s.visitsToday}</b><span>כניסות היום</span></div>
+      </div>
+      <div class="item" style="border-top-color:var(--brand)">
+        <h3 style="margin:0 0 6px">🔔 הודעה לפעמון של כולם</h3>
+        <label>כותרת</label><input type="text" id="n-title" placeholder="למשל: עדכון חשוב לקוראים">
+        <label>תוכן (לא חובה)</label><textarea class="short" id="n-body"></textarea>
+        <div class="actions"><button class="btn green" id="n-send">שליחה לכולם</button></div>
+        <p class="msg" id="n-msg"></p>
+      </div>
+      <h3 style="margin:18px 4px 8px">המשתמשים</h3>
+      <div id="u-list"></div>
+      <h3 style="margin:18px 4px 8px">כניסות אחרונות</h3>
+      <div class="item" id="v-list" style="padding:6px 16px"></div>`;
+
+    $("n-send").onclick = () => sendNotice(null, $("n-title").value, $("n-body").value, $("n-msg"), () => { $("n-title").value = ""; $("n-body").value = ""; });
+
+    $("u-list").innerHTML = r.users.length ? r.users.map((u) => `
+      <div class="item" style="${u.blocked ? "opacity:.55" : ""}">
+        <h3 style="margin:0 0 2px">${u.online ? "🟢 " : ""}${esc(u.name || "")}</h3>
+        <div class="src" dir="ltr" style="text-align:right">${esc(u.email)}</div>
+        <div class="src">נרשם ${esc(new Date(u.created_at).toLocaleDateString("he-IL"))} · ${u.visits} כניסות${u.last_seen ? ` · נראה לאחרונה ${esc(timeAgo(u.last_seen))}` : ""}${u.blocked ? " · חסום" : ""}</div>
+        <div class="actions">
+          <button class="btn ghost" data-msg="${esc(u.id)}" data-name="${esc(u.name || u.email)}">הודעה אישית</button>
+          <button class="btn gray" data-block="${esc(u.id)}" data-b="${u.blocked ? "0" : "1"}">${u.blocked ? "ביטול חסימה" : "חסימה"}</button>
+        </div>
+        <div class="dm" id="dm-${esc(u.id)}"></div>
+      </div>`).join("") : `<div class="empty">עדיין אין משתמשים רשומים.</div>`;
+
+    $("v-list").innerHTML = r.visits.length ? r.visits.map((v) => `
+      <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px">
+        <span>${v.who ? esc(v.who) : `<span style="color:var(--muted)">אורח</span>`} · ${esc(v.device || "")} · <span dir="ltr">${esc(v.path || "/")}</span></span>
+        <span style="color:var(--muted);white-space:nowrap">${esc(timeAgo(v.created_at))}</span></div>`).join("") : `<p class="src">אין כניסות עדיין.</p>`;
+
+    panel.querySelectorAll("[data-msg]").forEach((b) => (b.onclick = () => {
+      const box = $(`dm-${b.dataset.msg}`);
+      box.innerHTML = `<label>הודעה אישית ל${esc(b.dataset.name)}</label><input type="text" class="dm-t" placeholder="כותרת"><textarea class="short dm-b" placeholder="תוכן"></textarea>
+        <div class="actions"><button class="btn green dm-s">שליחה</button></div><p class="msg dm-m"></p>`;
+      box.querySelector(".dm-s").onclick = () => sendNotice(b.dataset.msg, box.querySelector(".dm-t").value, box.querySelector(".dm-b").value, box.querySelector(".dm-m"), () => {});
+    }));
+    panel.querySelectorAll("[data-block]").forEach((b) => (b.onclick = async () => {
+      const blocking = b.dataset.b === "1";
+      if (blocking && !confirm("לחסום את המשתמש? הוא לא יוכל להתחבר.")) return;
+      await call("userBlock", { id: b.dataset.block, blocked: blocking });
+      renderUsers(panel);
+    }));
+  }
+
+  async function sendNotice(userId, title, body, msgEl, done) {
+    msgEl.className = "msg good"; msgEl.textContent = "שולח...";
+    try {
+      await call("notify", { userId, title, body });
+      msgEl.textContent = userId ? "ההודעה נשלחה לפעמון של המשתמש ✓" : "ההודעה נשלחה לפעמון של כולם ✓";
+      done();
+    } catch (err) { msgEl.className = "msg bad"; msgEl.textContent = err.message; }
   }
 
   // ---------- סרטונים ----------
@@ -442,7 +510,7 @@
   }
 
   // ---------- פניות ----------
-  const TOPICS = { general: "פנייה כללית", ads: "📣 פרסום", correction: "תיקון / טעות" };
+  const TOPICS = { general: "פנייה כללית", ads: "📣 פרסום", correction: "תיקון / טעות", message: "💬 הודעה ממשתמש", comment: "💭 תגובה", update: "📰 עדכון מקורא" };
   async function renderMessages(panel) {
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
     let list = [];
@@ -457,8 +525,16 @@
         <h3 style="margin:6px 0 2px">${esc(m.name)}</h3>
         <div class="src" dir="ltr" style="text-align:right">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : ""} ${m.email ? `<a href="mailto:${esc(m.email)}">${esc(m.email)}</a>` : ""}</div>
         <p style="white-space:pre-wrap;margin:10px 0 0">${esc(m.body)}</p>
-        <div class="actions"><button class="btn ${m.done ? "ghost" : "green"}" data-a="done">${m.done ? "סמן כלא טופל" : "סמן כטופל"}</button></div>`;
+        <div class="actions"><button class="btn ${m.done ? "ghost" : "green"}" data-a="done">${m.done ? "סמן כלא טופל" : "סמן כטופל"}</button>
+          ${m.user_id ? `<button class="btn ghost" data-a="reply">תשובה לפעמון שלו</button>` : ""}</div>
+        <div class="dm"></div>`;
       el.querySelector('[data-a="done"]').onclick = async () => { await call("messageDone", { id: m.id, done: !m.done }); renderMessages(panel); };
+      const rb = el.querySelector('[data-a="reply"]');
+      if (rb) rb.onclick = () => {
+        const box = el.querySelector(".dm");
+        box.innerHTML = `<label>תשובה ל${esc(m.name)}</label><textarea class="short dm-b"></textarea><div class="actions"><button class="btn green dm-s">שליחה</button></div><p class="msg dm-m"></p>`;
+        box.querySelector(".dm-s").onclick = () => sendNotice(m.user_id, "תשובה ממערכת נייעס סטטוס", box.querySelector(".dm-b").value, box.querySelector(".dm-m"), () => call("messageDone", { id: m.id, done: true }));
+      };
       panel.appendChild(el);
     });
   }

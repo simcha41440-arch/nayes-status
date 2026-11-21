@@ -1,7 +1,7 @@
 import { db, makeSlug } from "./_lib/db.js";
 import {
   checkPassword, issueToken, verifyToken, tokenFromRequest, deviceFromRequest, deviceHash,
-  signApproval, checkApproval, issueProfile, checkProfile,
+  signApproval, checkApproval, issueProfile, checkProfile, checkUserSession,
 } from "./_lib/auth.js";
 import { writeArticle } from "./_lib/ai.js";
 import { fetchImage, decodeDataUrl, checkAndStore, checkVideoFrames, createVideoUpload, isStoredName } from "./_lib/media.js";
@@ -11,7 +11,12 @@ import { CATEGORIES } from "./_lib/config.js";
 //
 // sendProfileLink { redirect }               → קישור כניסה נשלח למייל של בעל האתר בלבד (Supabase Auth)
 // verifyProfile { accessToken }              → אם הקישור הגיע מהמייל של בעל האתר: { profile } (אסימון לשנה)
-// login     { password, profile }            → { token } רק עם אסימון פרופיל תקף
+// login     { password, profile }            → { token } רק מהפרופיל של בעל האתר:
+//            אסימון מקישור המייל, או התחברות עם Google למייל של בעל האתר
+// usersList {}                               → משתמשים, מי מחובר עכשיו, סטטיסטיקות, כניסות אחרונות
+// notify    { userId?, title, body }         → הודעה לפעמון (לכולם או למשתמש אחד)
+// notificationsList {} / notificationDelete { id }
+// userBlock { id, blocked }
 // checkVideo { frames }                      → בדיקת AI לפריימים מהסרטון; אם עבר: כתובת העלאה + אישור חתום
 // attachVideo { id, name, approval, poster, sound } → שיוך הסרטון שהועלה לידיעה
 // setVideoSound { id, sound }                → קול בסרטון (רק אחרי שהמנהל שמע ואישר)
@@ -86,13 +91,13 @@ export default async function handler(req, res) {
 
     if (action === "login") {
       if (tooManyAttempts(ip)) return res.status(429).json({ error: "יותר מדי ניסיונות. נסה שוב בעוד רבע שעה." });
-      if (!checkProfile(body.profile)) return res.status(403).json({ needProfile: true, error: "צריך קודם לאשר את הפרופיל דרך המייל" });
+      if (!(await ownerProfile(body.profile, ownerEmail))) return res.status(403).json({ needProfile: true, error: "צריך להיכנס מהפרופיל של מנהל האתר" });
       if (!checkPassword(body.password)) return res.status(401).json({ error: "סיסמה שגויה" });
       return res.status(200).json({ token: issueToken(deviceHash(body.profile)) });
     }
 
     const profile = deviceFromRequest(req);
-    if (!checkProfile(profile) || !verifyToken(tokenFromRequest(req), profile)) {
+    if (!verifyToken(tokenFromRequest(req), profile) || !(await ownerProfile(profile, ownerEmail))) {
       res.status(401).json({ error: "נדרשת כניסה מחדש" });
       return;
     }
@@ -292,6 +297,56 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      case "usersList": {
+        const since5 = new Date(Date.now() - 5 * 60000).toISOString();
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const [{ data: users, error }, { data: visits }, { count: visitsToday }, { count: anonToday }] = await Promise.all([
+          db().from("users").select("id,email,name,created_at,last_seen,visits,blocked").order("last_seen", { ascending: false, nullsFirst: false }).limit(500),
+          db().from("visits").select("id,user_id,path,device,created_at").order("created_at", { ascending: false }).limit(200),
+          db().from("visits").select("id", { count: "exact", head: true }).gte("created_at", today.toISOString()),
+          db().from("visits").select("id", { count: "exact", head: true }).gte("created_at", today.toISOString()).is("user_id", null),
+        ]);
+        if (error) throw error;
+        const names = Object.fromEntries((users || []).map((u) => [u.id, u.name || u.email]));
+        return res.status(200).json({
+          users: (users || []).map((u) => ({ ...u, online: u.last_seen && u.last_seen > since5 })),
+          visits: (visits || []).map((v) => ({ ...v, who: v.user_id ? names[v.user_id] || "משתמש" : null })),
+          stats: {
+            users: (users || []).length,
+            online: (users || []).filter((u) => u.last_seen && u.last_seen > since5).length,
+            newToday: (users || []).filter((u) => u.created_at >= today.toISOString()).length,
+            visitsToday: visitsToday || 0,
+            anonToday: anonToday || 0,
+          },
+        });
+      }
+
+      case "notify": {
+        const title = clean(body.title);
+        if (!title) return res.status(400).json({ error: "צריך כותרת להודעה" });
+        const { error } = await db().from("notifications").insert({ user_id: body.userId || null, title, body: String(body.body || "").trim().slice(0, 2000) || null });
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
+      case "notificationsList": {
+        const { data, error } = await db().from("notifications").select("*").order("created_at", { ascending: false }).limit(100);
+        if (error) throw error;
+        return res.status(200).json({ items: data });
+      }
+
+      case "notificationDelete": {
+        const { error } = await db().from("notifications").delete().eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
+      case "userBlock": {
+        const { error } = await db().from("users").update({ blocked: Boolean(body.blocked) }).eq("id", body.id);
+        if (error) throw error;
+        return res.status(200).json({ ok: true });
+      }
+
       case "messagesList": {
         const { data, error } = await db().from("messages").select("*").order("created_at", { ascending: false }).limit(200);
         if (error) throw error;
@@ -311,6 +366,15 @@ export default async function handler(req, res) {
     console.error(err);
     res.status(500).json({ error: "שגיאת שרת: " + (err.message || "") });
   }
+}
+
+// "הפרופיל של בעל האתר": אסימון מקישור המייל, או התחברות Google עם המייל של בעל האתר.
+async function ownerProfile(profile, ownerEmail) {
+  if (checkProfile(profile)) return true;
+  const uid = checkUserSession(profile);
+  if (!uid || !ownerEmail) return false;
+  const { data } = await db().from("users").select("email").eq("id", uid).maybeSingle();
+  return Boolean(data && data.email.toLowerCase() === ownerEmail);
 }
 
 function clean(v) {

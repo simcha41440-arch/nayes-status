@@ -360,3 +360,35 @@ a.chan { color: inherit; text-decoration: none; }
 .s-caption.open .cap-text { -webkit-line-clamp: unset; display: block; }
 .cap-more { background: none; border: 0; color: #fff; font-weight: 700; font-size: 15px; padding: 4px 10px; cursor: pointer; opacity: .9; }
 .s-caption { z-index: 4; }
+
+/* =============== מסך התחברות =============== */
+html.walled body { overflow: hidden; }
+.login-wall { position: fixed; inset: 0; z-index: 500; background: var(--bg); display: grid; place-items: center; padding: 24px; overflow-y: auto; }
+.lw-box { width: min(100%, 380px); text-align: center; }
+.lw-box h1 { font-size: 32px; margin: 0 0 8px; }
+.lw-box h1 em { font-style: normal; color: var(--brand); }
+.lw-sub { color: var(--muted); margin: 0 0 28px; font-size: 16.5px; }
+.lw-google { display: flex; align-items: center; justify-content: center; gap: 12px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 99px; padding: 13px 20px; font-weight: 600; font-size: 16.5px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.lw-google:hover { box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.lw-note { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
+.lw-err { color: #e05252; font-weight: 600; margin: 14px 0 0; }
+.lw-links { margin-top: 30px; font-size: 13.5px; }
+.lw-links a { color: var(--muted); text-decoration: underline; }
+
+/* =============== פעמון =============== */
+.bell-btn { position: relative; }
+.bell-badge { position: absolute; top: 4px; left: 4px; min-width: 18px; height: 18px; border-radius: 9px; background: #e0243c; color: #fff; font-size: 11px; font-weight: 700; font-style: normal; display: grid; place-items: center; padding: 0 5px; border: 2px solid var(--bg); }
+.bell-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.bell-item.unread { background: color-mix(in srgb, var(--brand) 9%, transparent); }
+.bi-mid { flex: 1; min-width: 0; }
+.bi-mid b { font-size: 16px; }
+.bi-mid p { margin: 4px 0; color: var(--ink-2); white-space: pre-wrap; }
+.bi-mid small { color: var(--muted); font-size: 12.5px; }
+.bi-tag { margin-inline-start: 8px; font-size: 11.5px; font-weight: 700; color: var(--brand); border: 1px solid var(--brand); border-radius: 99px; padding: 0 7px; }
+.bell-form { max-width: 640px; margin: 18px auto 40px; padding: 16px; display: grid; gap: 10px; }
+.bell-form h3 { margin: 0; font-size: 17px; }
+.bell-form select, .bell-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; }
+.bell-form textarea { min-height: 110px; resize: vertical; }
+.bell-form .btn { justify-self: start; }
+.form-msg { margin: 0; font-weight: 600; font-size: 14.5px; }
+.form-msg.good { color: #12a150; } .form-msg.bad { color: #e05252; }

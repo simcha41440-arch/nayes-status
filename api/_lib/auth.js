@@ -100,3 +100,18 @@ export function checkProfile(t) {
   if (!exp || !nonce || !sig || Number(exp) < Date.now()) return false;
   return safeEqual(sig, sign(`profile|${exp}|${nonce}`));
 }
+
+// ---------- התחברות משתמשים (Google דרך Supabase) ----------
+// אחרי התחברות אחת המשתמש מקבל אסימון חתום לשנתיים, ולא צריך להתחבר שוב.
+const USER_TTL_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+
+export function issueUserSession(uid) {
+  const exp = String(Date.now() + USER_TTL_MS);
+  return `${exp}.${uid}.${sign(`user|${exp}|${uid}`)}`;
+}
+
+export function checkUserSession(t) {
+  const [exp, uid, sig] = String(t || "").split(".");
+  if (!exp || !uid || !sig || Number(exp) < Date.now()) return null;
+  return safeEqual(sig, sign(`user|${exp}|${uid}`)) ? uid : null;
+}
