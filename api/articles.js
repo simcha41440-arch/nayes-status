@@ -53,6 +53,22 @@ export default async function handler(req, res) {
       return;
     }
 
+    // היום לפני שנה: מבזקים מאותו תאריך בשנה שעברה (לפי שעון ישראל)
+    if (req.query.onthisday) {
+      const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date());
+      const [y, m, d] = ymd.split("-").map(Number);
+      const from = new Date(Date.UTC(y - 1, m - 1, d) - 3 * 3600 * 1000).toISOString(); // חצות בישראל (בערך)
+      const to = new Date(Date.UTC(y - 1, m - 1, d + 1) - 3 * 3600 * 1000).toISOString();
+      const q = (fields) => db().from("articles").select(fields).eq("status", "published")
+        .gte("published_at", from).lt("published_at", to).order("score", { ascending: false, nullsFirst: false }).limit(10);
+      let { data, error } = await q(PUBLIC_FIELDS);
+      if (isMissingColumn(error)) ({ data, error } = await q(PUBLIC_FIELDS_BASIC));
+      if (error) throw error;
+      res.setHeader("Cache-Control", "public, s-maxage=600");
+      res.status(200).json({ articles: data || [] });
+      return;
+    }
+
     const build = (fields) => {
       let q = db().from("articles").select(fields).eq("status", "published");
 

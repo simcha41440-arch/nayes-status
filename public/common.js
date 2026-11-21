@@ -5,7 +5,8 @@ const CATEGORIES = {
   politics:  { name: "פוליטי",      emoji: "🏛️" },
   community: { name: "קהילה",       emoji: "🤝" },
   torah:     { name: "עולם התורה",  emoji: "📜" },
-  economy:   { name: "כסף וצרכנות", emoji: "💰" },
+  economy:   { name: "כלכלה",       emoji: "💰" },
+  consumer:  { name: "צרכנות",      emoji: "🛒" },
   local:     { name: "בעיר",        emoji: "🏙️" },
   health:    { name: "בריאות",      emoji: "🩺" },
   world:     { name: "עולם",        emoji: "🌍" },
@@ -15,7 +16,8 @@ const CATEGORIES = {
 
 const REACTIONS = ["❤️", "😍", "😂", "😮", "😢", "🙏", "👏", "🎉", "💯"];
 
-const CITIES = ["ירושלים", "בני ברק", "בית שמש", "מודיעין עילית", "ביתר עילית", "אלעד", "אשדוד"];
+const CITIES = ["ירושלים", "בני ברק", "בית שמש", "מודיעין עילית", "ביתר עילית", "אלעד", "אשדוד",
+  "חריש", "רכסים", "צפת", "טבריה", "נתיבות", "ערד", "פתח תקווה", "חיפה"];
 
 // לאן פונים מפרסמים: טופס יצירת הקשר באתר (הפניות מגיעות למייל, בלי לחשוף את הכתובת).
 const ADVERTISE_LINK = "/about?topic=ads#contact";
@@ -225,7 +227,7 @@ const DEMO_ADS = [
 
 const CHANNEL_COLORS = {
   hot: "#c0392b", general: "#243640", politics: "#3f4f8f", community: "#2f7566", torah: "#7d5b2e",
-  economy: "#c0612b", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
+  economy: "#c0612b", consumer: "#b5476b", zmanim: "#3d6e9e", oref: "#b23a2f", city: "#6f4396", memory: "#6b5a8e", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
 };
 
 const ICON_PATHS = {
@@ -236,6 +238,13 @@ const ICON_PATHS = {
   community: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.4 2.7-6 6-6s6 2.6 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.1c2.6.4 4.5 2.7 4.5 5.9"/>',
   torah: '<path d="M12 6.5C9.8 5 6.8 4.5 3 4.5v13.5c3.8 0 6.8.5 9 2 2.2-1.5 5.2-2 9-2V4.5c-3.8 0-6.8.5-9 2z"/><path d="M12 6.5V20"/>',
   economy: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M16 13.5h2.5"/><path d="M5.5 7 15 3.8l1.6 3.2"/>',
+  consumer: '<path d="M3 4h2.5l2.2 10.5h10.6L20.5 7H7"/><circle cx="9.5" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
+  zmanim: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/>',
+  oref: '<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/><path d="M12 8.5v4.5"/><circle cx="12" cy="16" r=".9" fill="currentColor"/>',
+  memory: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4.3l3 1.8"/>',
+  whatsapp: '<path d="M4 20l1.2-3.9A8.3 8.3 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 3 2.9 5.9 6 6.2l1.1-1.5-1.9-1-.9.8c-1-.4-2.1-1.5-2.5-2.5l.8-.9-1-1.9z"/>',
+  city: '<path d="M3.5 20.5h17M5.5 20.5V9l5-3v14.5M10.5 20.5V4.5l8 4v12"/><path d="M13.5 11h2M13.5 14h2M13.5 17h2"/>',
+  alert: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".9" fill="currentColor"/>',
   local: '<path d="M12 21s-7-6.1-7-11.8a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.2" r="2.6"/>',
   health: '<path d="M20.6 8.8c0 4.9-8.6 11.2-8.6 11.2S3.4 13.7 3.4 8.8A4.5 4.5 0 0 1 12 6.6a4.5 4.5 0 0 1 8.6 2.2z"/><path d="M6.5 12.2h2.8l1.4-2.7 2.6 5.3 1.4-2.6h2.8"/>',
   world: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.6 3.7 5.6 3.7 9s-1.3 6.4-3.7 9c-2.4-2.6-3.7-5.6-3.7-9S9.6 5.6 12 3z"/>',

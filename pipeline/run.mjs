@@ -22,6 +22,7 @@ import { promisify } from "node:util";
 import { mkdtemp, writeFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import "../public/zmanim.js"; // מגדיר את globalThis.Zmanim (שבתות וימים טובים)
 
 const run = promisify(execFile);
 
@@ -273,6 +274,12 @@ async function main() {
   const missing = ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !process.env[k]);
   if (missing.length) {
     console.log(`הסריקה מדלגת: חסרים ${missing.join(", ")} בהגדרות (Settings > Secrets and variables > Actions).`);
+    return;
+  }
+  // שבת וימים טובים: אין עדכונים בכלל (וגם לא עולה כסף)
+  const holy = globalThis.Zmanim.holyNow(new Date());
+  if (holy && process.env.IGNORE_SHABBAT !== "true") {
+    console.log(`${holy}: אין עדכונים. הסריקה תחזור במוצאי ${holy === "שבת" ? "שבת" : "החג"}.`);
     return;
   }
   const sources = await loadSources();

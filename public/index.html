@@ -41,16 +41,21 @@
           <a href="/settings" role="menuitem">הגדרות</a>
           <button id="menu-seen" role="menuitem">סימון הכל כנצפה</button>
           <button id="install" role="menuitem" hidden>התקנה למסך הבית</button>
+          <button id="menu-share" role="menuitem">שיתוף נייעס סטטוס</button>
           <a href="/about?topic=ads#contact" role="menuitem">פרסום בנייעס סטטוס</a>
           <a href="/about" role="menuitem">אודות ומדיניות תוכן</a>
         </div>
       </div>
     </header>
 
+    <div id="alerts"></div>
     <h2 class="sec-h">סטטוס</h2>
     <div class="cards" id="cards"><div class="skeleton" style="width:100%;height:176px"></div></div>
 
-    <h2 class="sec-h" style="margin-top:10px">ערוצים</h2>
+    <h2 class="sec-h" style="margin-top:10px">שימושי</h2>
+    <div class="tools" id="tools"></div>
+
+    <h2 class="sec-h" style="margin-top:4px">ערוצים</h2>
     <div id="chans"></div>
 
     <h2 class="sec-h" style="margin-top:8px">עוד בנייעס סטטוס</h2>
@@ -123,6 +128,8 @@
   <script src="/common.js"></script>
   <script src="/user.js"></script>
   <script src="/status.js"></script>
+  <script src="/zmanim.js"></script>
+  <script src="/tools.js"></script>
   <script src="/pwa.js"></script>
 </body>
 </html>

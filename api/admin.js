@@ -6,6 +6,7 @@ import {
 import { writeArticle } from "./_lib/ai.js";
 import { fetchImage, decodeDataUrl, checkAndStore, checkVideoFrames, createVideoUpload, isStoredName } from "./_lib/media.js";
 import { CATEGORIES } from "./_lib/config.js";
+import { getState, setState } from "./_lib/state.js";
 
 // API של לוח הבקרה. כל הבקשות: POST עם { action, ... }.
 //
@@ -357,6 +358,20 @@ export default async function handler(req, res) {
         const { error } = await db().from("messages").update({ done: Boolean(body.done) }).eq("id", body.id);
         if (error) throw error;
         return res.status(200).json({ ok: true });
+      }
+
+      case "stateGet": {
+        return res.status(200).json({ state: await getState() });
+      }
+
+      case "emergencySet": {
+        const emergency = {
+          on: Boolean(body.on),
+          title: String(body.title || "מצב חירום").slice(0, 120),
+          text: String(body.text || "").slice(0, 1000),
+          since: body.on ? new Date().toISOString() : null,
+        };
+        return res.status(200).json({ state: await setState({ emergency }) });
       }
 
       default:

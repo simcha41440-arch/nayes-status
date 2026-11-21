@@ -40,6 +40,7 @@
   try { if (localStorage.getItem("nayes_profile")) $("menu-admin").hidden = false; } catch {}
   $("menu-btn").onclick = (e) => { e.stopPropagation(); $("menu").classList.toggle("open"); };
   document.addEventListener("click", () => $("menu").classList.remove("open"));
+  $("menu-share").onclick = () => window.nayesTools && window.nayesTools.shareSite();
   $("menu-seen").onclick = () => {
     recentOnly(articles).forEach((a) => seen.add(a.slug));
     save("nayes_seen", [...seen].slice(-400));
@@ -69,6 +70,7 @@
     }
     renderHome();
     knownSlugs = new Set(articles.map((a) => a.slug));
+    announce();
 
     const m = location.pathname.match(/^\/article\/([^/]+)/);
     if (m) {
@@ -91,6 +93,7 @@
     articles = res.articles;
     knownSlugs = new Set(articles.map((a) => a.slug));
     alertHot(fresh.filter((a) => a.is_breaking && !seen.has(a.slug) && !isMuted(a)));
+    announce();
     if (viewer.open) updateBadge();
     else renderHome();
   }
@@ -108,6 +111,20 @@
     }
   }
 
+  // מודיע לשאר חלקי האתר (כלים, התרעות) שהמבזקים התעדכנו
+  function announce() {
+    document.dispatchEvent(new CustomEvent("nayes:articles", { detail: articles }));
+  }
+  window.nayesStatus = {
+    openList: (list, slug) => {
+      const seq = [...list].sort((a, b) => Date.parse(a.published_at) - Date.parse(b.published_at)).map((a) => ({ type: "news", a }));
+      openSeq(seq, Math.max(0, slug ? seq.findIndex((s) => s.a.slug === slug) : 0));
+    },
+    openChannel: (key) => openChannel(key),
+    articles: () => articles,
+    rerender: () => renderHome(),
+  };
+
   function updateBadge() {
     const unread = recentOnly(articles).filter((a) => !seen.has(a.slug) && !isMuted(a)).length;
     setUnreadBadge(unread);
@@ -124,6 +141,13 @@
     const recent = recentOnly(articles);
     const muted = getPrefs().muted;
     const out = [{ key: "all", name: "נייעס סטטוס", face: "נ", logo: true, items: recent }];
+    // ערוץ אישי: העיר שלי (נבחרת בהגדרות). כולל מבזקים מקומיים מהיומיים האחרונים.
+    const myCity = getPrefs().city;
+    if (myCity) {
+      const since = Date.now() - 48 * 3600 * 1000;
+      const items = articles.filter((a) => a.city === myCity && Date.parse(a.published_at) > since);
+      if (items.length) out.push({ key: "city", name: myCity, icon: "city", items });
+    }
     const hot = recent.filter((a) => a.is_breaking);
     if (hot.length) out.push({ key: "hot", name: "דחוף", icon: "hot", items: hot, muted: muted.includes("hot") });
     for (const [key, c] of Object.entries(CATEGORIES)) {
@@ -422,6 +446,7 @@
       <button class="chev" id="chev" aria-label="עוד">${ICON_CHEV}</button>
       <div class="reply-row">
         <button class="reply" id="reply"><span class="em">${icon("smile", 24, 1.6)}</span>השב</button>
+        <button class="heart" id="fwd" aria-label="שיתוף">${icon("share", 24, 1.8)}</button>
         <button class="heart ${myRx[a.slug] === HEART ? "on" : ""}" id="heart" aria-label="אהבתי">${ICON_HEART}</button>
       </div>`;
 
@@ -433,6 +458,7 @@
         ${a.source_name ? `<div class="src">מקור: ${esc(a.source_name)}</div>` : ""}
       </div>` : ""}
       <div class="acts">
+        <button id="wa">${icon("whatsapp", 20)}<span>וואטסאפ</span></button>
         <button id="send">${icon("share", 20)}<span>שליחה לחבר</span></button>
         <button id="copy">${icon("link", 20)}<span>העתקת קישור</span></button>
         <button id="p-close">${icon("close", 20)}<span>סגירה</span></button>
@@ -448,13 +474,22 @@
       try { await navigator.clipboard.writeText(location.origin + articleUrl(a)); e.currentTarget.querySelector("span").textContent = "הועתק"; } catch {}
     };
     $("p-close").onclick = closePanel;
-    $("send").onclick = async () => {
-      const url = location.origin + articleUrl(a);
-      try {
-        if (navigator.share) await navigator.share({ title: a.title, text: a.title, url });
-        else window.open(`https://wa.me/?text=${encodeURIComponent(a.title + "\n" + url)}`, "_blank", "noopener");
-      } catch {}
-    };
+    $("send").onclick = () => shareArticle(a);
+    $("wa").onclick = () => shareWhatsApp(a);
+    $("fwd").onclick = (e) => { e.stopPropagation(); setPaused(true); shareArticle(a).finally(() => { if (!$("panel").classList.contains("open")) setPaused(false); }); };
+  }
+
+  // ---------- שיתוף ----------
+  const shareText = (a) => `${a.title}\n${a.summary ? a.summary + "\n" : ""}\nנייעס סטטוס, רק מה ששווה לדעת:\n${location.origin + articleUrl(a)}`;
+  function shareWhatsApp(a) {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText(a))}`, "_blank", "noopener");
+  }
+  async function shareArticle(a) {
+    const url = location.origin + articleUrl(a);
+    try {
+      if (navigator.share) await navigator.share({ title: a.title, text: `${a.title}\n`, url });
+      else shareWhatsApp(a);
+    } catch {}
   }
 
   function reactWith(a, emoji) {

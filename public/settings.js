@@ -39,6 +39,9 @@
       ${row({ id: "badge", ic: "badge", title: "סימון מבזקים חדשים", sub: "מספר על הלשונית בדפדפן ועל אייקון האפליקציה", toggle: true, checked: p.badge })}
       ${row({ id: "hotAlerts", ic: "bell", title: "התראה על מבזק דחוף", sub: "התראה קופצת כשמגיע מבזק דחוף, בזמן שהאתר פתוח", toggle: true, checked: p.hotAlerts })}
 
+      <div class="set-sec">אישי</div>
+      ${row({ id: "city", ic: "city", title: "העיר שלי", sub: p.city ? `${p.city} · ערוץ אישי וזמני היום לפי העיר` : "בחירת עיר לערוץ אישי ולזמני היום" })}
+
       <div class="set-sec">תצוגה</div>
       ${row({ id: "theme", ic: "theme", title: "ערכת נושא", sub: THEMES[p.theme] })}
       ${row({ id: "font", ic: "text", title: "גודל טקסט", sub: FONTS[p.font] })}
@@ -53,6 +56,7 @@
 
       <div class="set-sec">עוד</div>
       ${row({ id: "installRow", ic: "phone", title: "התקנה למסך הבית", sub: "נייעס סטטוס כמו אפליקציה, בלי חנות אפליקציות" })}
+      ${row({ id: "shareSite", ic: "whatsapp", title: "שיתוף נייעס סטטוס", sub: "לשלוח לחברים ולמשפחה" })}
       ${row({ ic: "megaphone", title: "פרסום בנייעס סטטוס", sub: "סטטוס ממומן, כרטיס ממומן ומודעת צד", href: "/about?topic=ads#contact" })}
       ${row({ ic: "chat", title: "יצירת קשר", sub: "שאלות, תיקונים ודיווח על טעות", href: "/about#contact" })}
       ${row({ ic: "info", title: "אודות ומדיניות תוכן", href: "/about" })}`;
@@ -67,6 +71,7 @@
       setPref("hotAlerts", e.target.checked);
       snack(e.target.checked ? "התראות על מבזקים דחופים הופעלו" : "ההתראות כובו");
     };
+    $("city").onclick = () => choose("העיר שלי", Object.fromEntries([["", "בלי עיר"], ...CITIES.map((c) => [c, c])]), getPrefs().city, (v) => { setPref("city", v); render(); });
     $("theme").onclick = () => choose("ערכת נושא", THEMES, getPrefs().theme, (v) => { setPref("theme", v); render(); });
     $("font").onclick = () => choose("גודל טקסט", FONTS, getPrefs().font, (v) => { setPref("font", v); render(); });
     $("speed").onclick = () => choose("מהירות מעבר בין סטטוסים", SPEEDS, getPrefs().speed, (v) => { setPref("speed", v); render(); });
@@ -80,6 +85,12 @@
       try { localStorage.removeItem("nayes_seen"); } catch {}
       snack("היסטוריית הצפייה נוקתה");
     });
+    $("shareSite").onclick = async () => {
+      const url = location.origin + "/";
+      const text = "נייעס סטטוס: המבזקים הכי חשובים לציבור החרדי, בסטטוסים קצרים. רק מה ששווה לדעת.";
+      try { if (navigator.share) return await navigator.share({ title: "נייעס סטטוס", text, url }); } catch { return; }
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + url)}`, "_blank", "noopener");
+    };
     $("installRow").onclick = () => {
       const btn = document.getElementById("install");
       if (btn && !btn.hidden) return btn.click();

@@ -396,3 +396,62 @@ html.walled body { overflow: hidden; }
 .seo-intro { margin: 18px 16px 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .seo-intro .seo-h1 { font-size: 14px; margin: 0 0 4px; color: var(--ink-2); }
 .seo-intro p { margin: 0; }
+
+/* =============== כלים שימושיים =============== */
+.tools { display: flex; gap: 10px; overflow-x: auto; padding: 2px 16px 10px; scrollbar-width: none; }
+.tools::-webkit-scrollbar { display: none; }
+.tool { flex: none; width: 104px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: var(--soft); border: 0; border-radius: 16px; padding: 12px 6px 10px; cursor: pointer; text-align: center; }
+.tool:hover { filter: brightness(1.06); }
+.tool .t-ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; margin-bottom: 4px; }
+.tool b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tool small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* =============== התרעות בראש המסך =============== */
+#alerts { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; }
+#alerts:empty { display: none; }
+#alerts { margin-top: 4px; }
+.alert-bar { display: flex; align-items: center; gap: 10px; width: 100%; text-align: right; border: 0; border-radius: 14px; padding: 11px 14px; font-size: 14.5px; line-height: 1.4; color: #fff; cursor: pointer; }
+.alert-bar span { flex: 1; min-width: 0; }
+.alert-bar i { font-style: normal; font-weight: 700; font-size: 13px; background: rgba(255,255,255,.2); padding: 4px 10px; border-radius: 99px; flex: none; }
+.alert-bar svg { flex: none; }
+.alert-bar.red { background: #b3261e; animation: alertPulse 2.4s ease-in-out infinite; }
+.alert-bar.red.static { animation: none; margin-bottom: 8px; cursor: default; }
+.alert-bar.blue { background: #1f6aa5; }
+.alert-bar.calm { background: var(--soft); color: var(--ink); cursor: default; }
+@keyframes alertPulse { 50% { background: #8f1d17; } }
+
+/* =============== חלון כלי (זמנים, פיקוד העורף) =============== */
+.sheet-body { max-width: 640px; margin: 0 auto; padding: 4px 16px 40px; }
+.sheet-h { font-size: 17px; font-weight: 700; margin: 22px 0 10px; }
+.zm-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.zm-city { display: inline-flex; align-items: center; gap: 6px; background: var(--soft); border: 0; border-radius: 99px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+.zm-days { display: flex; background: var(--soft); border-radius: 99px; padding: 3px; }
+.zm-days button { border: 0; background: none; padding: 6px 16px; border-radius: 99px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.zm-days button.on { background: var(--bg); color: var(--ink); }
+.zm-date { color: var(--muted); margin: 12px 2px 8px; font-size: 14.5px; }
+.zm-list, .zm-shabbat { background: var(--soft); border-radius: 16px; overflow: hidden; }
+.zm-row { display: flex; justify-content: space-between; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+.zm-row:last-child { border-bottom: 0; }
+.zm-row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.zm-row.next { background: rgba(255,90,54,.12); }
+.zm-row.next b { color: var(--brand); }
+.zm-shabbat { margin-top: 16px; }
+.zm-shabbat h3 { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 16px 6px; font-size: 16px; }
+.zm-share { margin: 18px auto 0; display: flex; justify-content: center; }
+.zm-note { color: var(--muted); font-size: 12.5px; margin: 14px 2px 0; line-height: 1.6; }
+.oref-list { display: flex; flex-direction: column; gap: 8px; }
+.oref-item { background: var(--soft); border-radius: 14px; padding: 10px 14px; border-inline-start: 4px solid #b3261e; }
+.oref-item small { color: var(--muted); font-size: 12.5px; }
+.oref-item p { margin: 4px 0 0; white-space: pre-wrap; font-size: 15px; }
+.guide { display: flex; flex-direction: column; gap: 8px; }
+.guide div { background: var(--soft); border-radius: 14px; padding: 10px 14px; }
+.guide b { font-size: 15.5px; }
+.guide p { margin: 3px 0 0; color: var(--ink-2); font-size: 14.5px; }
+.phones { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.phones a { background: var(--soft); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: center; }
+.phones b { font-size: 22px; color: #b3261e; }
+.phones span { font-size: 13.5px; color: var(--muted); }
+.city-list { max-height: 50vh; overflow-y: auto; }
+.dlg { max-height: 90vh; overflow-y: auto; }
+.snack-act { background: none; border: 0; color: #7fd1ff; font-weight: 700; cursor: pointer; margin-inline-start: 8px; }
+.reply-row .heart + .heart { margin-inline-start: 0; }

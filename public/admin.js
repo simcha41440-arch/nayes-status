@@ -123,6 +123,7 @@
     if (tab === "ads") return renderAds(panel);
     if (tab === "messages") return renderMessages(panel);
     if (tab === "users") return renderUsers(panel);
+    if (tab === "emergency") return renderEmergency(panel);
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
     try {
       const { articles } = await call("list", { status: tab });
@@ -537,6 +538,33 @@
       };
       panel.appendChild(el);
     });
+  }
+
+  // ---------- מצב חירום: פס אדום בראש האתר לכל הגולשים ----------
+  async function renderEmergency(panel) {
+    panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
+    let em = {};
+    try { em = (await call("stateGet")).state.emergency || {}; } catch (err) { panel.innerHTML = `<div class="empty">${esc(err.message)}</div>`; return; }
+    panel.innerHTML = `<div class="item">
+      <h3 style="margin:0 0 6px">${em.on ? "🚨 מצב חירום פעיל עכשיו" : "מצב חירום כבוי"}</h3>
+      <p class="src" style="margin:0 0 12px">כשמצב חירום פעיל, מופיע לכל הגולשים פס אדום בראש האתר עם ההודעה שלך, וקיצור להנחיות פיקוד העורף.
+      הודעות פיקוד העורף מהשעה האחרונה מופיעות באתר גם בלי זה, אוטומטית.</p>
+      <label>כותרת</label><input id="em-title" value="${esc(em.title || "מצב חירום")}" maxlength="120">
+      <label>הודעה לגולשים</label><textarea id="em-text" class="short" maxlength="1000" placeholder="למשל: יש לפעול לפי הנחיות פיקוד העורף ולהישאר בקרבת מרחב מוגן.">${esc(em.text || "")}</textarea>
+      <div class="actions">
+        <button class="btn ${em.on ? "" : "green"}" id="em-on">${em.on ? "עדכון ההודעה" : "הפעלת מצב חירום"}</button>
+        ${em.on ? `<button class="btn ghost" id="em-off">כיבוי מצב חירום</button>` : ""}
+      </div><p class="msg" id="em-msg"></p></div>`;
+    const save = async (on) => {
+      const msg = $("em-msg");
+      msg.className = "msg"; msg.textContent = "שומר...";
+      try {
+        await call("emergencySet", { on, title: $("em-title").value, text: $("em-text").value });
+        renderEmergency(panel);
+      } catch (err) { msg.className = "msg bad"; msg.textContent = err.message; }
+    };
+    $("em-on").onclick = () => save(true);
+    if ($("em-off")) $("em-off").onclick = () => save(false);
   }
 
   show(Boolean(token));
