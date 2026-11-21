@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>נייעס סטטוס | רק מה ששווה לדעת</title>
+  <meta name="description" content="נייעס סטטוס: המבזקים הכי חשובים, בסטטוסים קצרים וקלילים. רק מה ששווה לדעת.">
+  <meta property="og:title" content="נייעס סטטוס">
+  <meta property="og:description" content="רק מה ששווה לדעת.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0b141a">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="נייעס סטטוס">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/prefs.js"></script>
+</head>
+<body class="has-nav">
+  <div class="app">
+    <header class="appbar">
+      <h1 style="flex:1">נייעס <em>סטטוס</em></h1>
+      <button class="menu-btn" id="search-btn" aria-label="חיפוש"></button>
+      <div class="menu-wrap">
+        <button class="menu-btn" id="menu-btn" aria-label="אפשרויות נוספות" aria-haspopup="true"></button>
+        <div class="menu" id="menu" role="menu">
+          <a href="/settings" role="menuitem">הגדרות</a>
+          <button id="menu-seen" role="menuitem">סימון הכל כנצפה</button>
+          <button id="install" role="menuitem" hidden>התקנה למסך הבית</button>
+          <a href="/about?topic=ads#contact" role="menuitem">פרסום בנייעס סטטוס</a>
+          <a href="/about" role="menuitem">אודות ומדיניות תוכן</a>
+        </div>
+      </div>
+    </header>
+
+    <h2 class="sec-h">סטטוס</h2>
+    <div class="cards" id="cards"><div class="skeleton" style="width:100%;height:176px"></div></div>
+
+    <h2 class="sec-h" style="margin-top:10px">ערוצים</h2>
+    <div id="chans"></div>
+
+    <h2 class="sec-h" style="margin-top:8px">עוד בנייעס סטטוס</h2>
+    <a class="chan" href="/about?topic=ads#contact">
+      <div class="av plain" style="--s:52px"><span class="face ic" id="adv-face" style="background:#c0612b"></span></div>
+      <span class="mid"><b>העסק שלך בסטטוס של כולם</b><span class="last">סטטוס ממומן, כרטיס ממומן ומודעת צד</span></span>
+      <span class="follow">פרטים</span>
+    </a>
+
+    <footer>© <span id="year"></span> נייעס סטטוס · <a href="/about" style="text-decoration:underline">אודות ומדיניות תוכן</a></footer>
+  </div>
+
+  <button class="fab" id="fab" aria-label="צפייה בכל המבזקים"></button>
+
+  <nav class="bottom-nav" aria-label="ניווט">
+    <a href="/" class="on" aria-current="page"><span class="pill" id="nav-updates"></span>עדכונים</a>
+    <button id="nav-search"><span class="pill" id="nav-search-ic"></span>חיפוש</button>
+    <a href="/settings"><span class="pill" id="nav-settings"></span>הגדרות</a>
+  </nav>
+
+  <div class="search" id="search" role="dialog" aria-label="חיפוש">
+    <div class="search-bar">
+      <button class="menu-btn" id="search-back" aria-label="חזרה"></button>
+      <input id="search-input" type="search" placeholder="חיפוש..." autocomplete="off">
+    </div>
+    <div id="search-results"></div>
+  </div>
+
+  <div class="viewer" id="viewer" aria-modal="true" role="dialog" aria-label="צפייה בסטטוס">
+    <button class="ico v-close" id="v-x" aria-label="סגירה"></button>
+    <button class="nav-arrow" id="arr-prev" aria-label="הקודם"></button>
+    <div class="stage" id="stage">
+      <div class="bars" id="bars"></div>
+      <div class="s-head" id="s-head"></div>
+      <div id="s-media"></div>
+      <div class="tap prev" id="tap-prev" aria-hidden="true"></div>
+      <div class="tap next" id="tap-next" aria-hidden="true"></div>
+      <div class="s-foot" id="s-foot"></div>
+      <div class="panel" id="panel"></div>
+    </div>
+    <button class="nav-arrow" id="arr-next" aria-label="הבא"></button>
+    <aside class="v-side" id="v-side"></aside>
+  </div>
+
+  <script src="/common.js"></script>
+  <script src="/status.js"></script>
+  <script src="/pwa.js"></script>
+</body>
+</html>
