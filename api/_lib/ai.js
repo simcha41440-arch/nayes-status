@@ -199,3 +199,58 @@ export async function checkFrames(frames) {
   if (result.refused) return { approved: false, reason: "הבדיקה נכשלה, הסרטון נפסל" };
   return result;
 }
+
+// ---------- סינון ראשוני זול (חוסך כסף; לא משפיע על איכות הכתיבה) ----------
+// מודל קטן עובר על כל הידיעות בבת אחת, ופוסל רק את מה שבוודאות לא מתאים.
+// כל מה שיש בו ספק עובר הלאה לעורך הראשי (המודל החזק).
+
+const PREFILTER_MODEL = () => process.env.PREFILTER_MODEL || "claude-haiku-5-5";
+
+const PREFILTER_SYSTEM = `אתה מסנן ראשוני לערוץ מבזקים לציבור החרדי. תקבל רשימת ידיעות ממוספרות.
+לכל ידיעה החלט: pass=true (להעביר לעורך) או pass=false (לפסול).
+פסול רק כשברור לגמרי שהידיעה לא מתאימה: ספורט, רכילות וידוענים, זמרים ותרבות פנאי, טלוויזיה וסרטים,
+הורוסקופ ואמונות טפלות, אופנה ויופי, פרסומות ותוכן שיווקי, הודעות ריקות (ברכות, "לילה טוב"),
+מתכונים וטיפים כלליים, תוכן לא צנוע, או דתות אחרות.
+חדשות אמיתיות, פוליטיקה, ביטחון, כלכלה, עולם, ובוודאי חדשות הקהילה החרדית ועולם התורה: pass=true.
+בכל ספק: pass=true.`;
+
+const PREFILTER_SCHEMA = {
+  type: "object",
+  properties: {
+    decisions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { index: { type: "integer" }, pass: { type: "boolean" }, reason: { type: "string" } },
+        required: ["index", "pass", "reason"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["decisions"],
+  additionalProperties: false,
+};
+
+/** @param {{source: string, text: string}[]} items  @returns {Promise<{pass: boolean, reason: string}[]>} */
+export async function prefilter(items) {
+  if (!items.length) return [];
+  const list = items.map((it, i) => `[${i}] (${it.source}) ${String(it.text).slice(0, 600).replace(/\s+/g, " ")}`).join("\n\n");
+  try {
+    const response = await ai().messages.create({
+      model: PREFILTER_MODEL(),
+      max_tokens: 6000,
+      output_config: { effort: "low", format: { type: "json_schema", schema: PREFILTER_SCHEMA } },
+      system: PREFILTER_SYSTEM,
+      messages: [{ role: "user", content: list }],
+    });
+    if (response.stop_reason !== "end_turn") throw new Error(`stop: ${response.stop_reason}`);
+    const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    const { decisions } = JSON.parse(text);
+    const out = items.map(() => ({ pass: true, reason: "" })); // ברירת מחדל: עובר
+    for (const d of decisions || []) if (out[d.index]) out[d.index] = { pass: d.pass !== false, reason: d.reason || "" };
+    return out;
+  } catch (err) {
+    console.warn("סינון ראשוני נכשל, כל הידיעות עוברות לעורך:", err.message);
+    return items.map(() => ({ pass: true, reason: "" }));
+  }
+}

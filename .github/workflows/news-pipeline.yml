@@ -2,7 +2,7 @@ name: צינור חדשות
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # כל 10 דקות (GitHub עלול לעכב בכמה דקות בשעות עומס)
+    - cron: "*/15 * * * *"   # כל 15 דקות (GitHub עלול לעכב בכמה דקות בשעות עומס)
   workflow_dispatch: {}        # הפעלה ידנית מלשונית Actions
 
 concurrency:

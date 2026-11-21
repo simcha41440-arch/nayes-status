@@ -12,7 +12,7 @@ import crypto from "node:crypto";
 import { readFile } from "node:fs/promises";
 import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
-import { writeArticle } from "../api/_lib/ai.js";
+import { writeArticle, prefilter } from "../api/_lib/ai.js";
 import { fetchImage, checkAndStore } from "../api/_lib/media.js";
 import { checkFrames } from "../api/_lib/ai.js";
 import { readTelegram } from "../api/_lib/telegram.js";
@@ -25,7 +25,8 @@ import path from "node:path";
 
 const run = promisify(execFile);
 
-const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);
+const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);        // כמה ידיעות העורך הראשי כותב בכל ריצה
+const PREFILTER_BATCH = Number(process.env.PREFILTER_BATCH || 40); // כמה ידיעות נבדקות בסינון הזול בכל ריצה
 const MAX_AGE_HOURS = Number(process.env.MAX_AGE_HOURS || 12);
 const AUTO_PUBLISH = process.env.AUTO_PUBLISH === "true";
 // רף איכות: מבזק עם ציון חשיבות נמוך מזה לא נכנס בכלל (ברירת מחדל 6 מתוך 10).
@@ -281,8 +282,21 @@ async function main() {
   }
 
   const fresh = await filterNew(await collectItems(sources));
-  const batch = fresh.slice(0, MAX_PER_RUN);
-  console.log(`נמצאו ${fresh.length} ידיעות חדשות, מעבד ${batch.length}.`);
+  const candidates = fresh.slice(0, PREFILTER_BATCH);
+
+  // שלב 1: סינון זול של כל המועמדות בבת אחת
+  const verdicts = await prefilter(candidates.map((c) => ({ source: c.source.name, text: c.text })));
+  const batch = [];
+  for (let i = 0; i < candidates.length; i++) {
+    if (verdicts[i].pass) { if (batch.length < MAX_PER_RUN) batch.push(candidates[i]); continue; }
+    console.log(`  ✗ (סינון ראשוני) [${candidates[i].source.name}] ${verdicts[i].reason.slice(0, 120)}`);
+    // נשמר כנפסל כדי לא לבדוק שוב
+    await db().from("articles").insert({
+      slug: makeSlug(), title: "(נפסל)", status: "rejected", source_name: candidates[i].source.name,
+      source_url: candidates[i].link, source_hash: candidates[i].hash, ai_notes: `סינון ראשוני: ${verdicts[i].reason}`.slice(0, 500),
+    });
+  }
+  console.log(`נמצאו ${fresh.length} ידיעות חדשות. ${candidates.length} נבדקו בסינון הזול, ${batch.length} עוברות לעורך הראשי.`);
 
   // כותרות שכבר פורסמו, כדי שהעורך לא יפרסם את אותו אירוע פעמיים
   const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
