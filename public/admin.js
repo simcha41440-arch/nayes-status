@@ -144,6 +144,9 @@
       .map(([k, v]) => `<option value="${k}" ${k === a.category ? "selected" : ""}>${esc(v.emoji + " " + v.name)}</option>`).join("");
 
     el.innerHTML = `
+      ${a.status === "published" ? `<div class="src" style="font-size:15px;margin-bottom:6px">👁 ${Number(a.views) || 0} צפיות${Object.keys(a.reactions || {}).length
+        ? " · תגובות: " + Object.entries(a.reactions).sort((x, y) => y[1] - x[1]).map(([e, n]) => `${e} ${n}`).join("  ")
+        : " · אין תגובות עדיין"}</div>` : ""}
       ${a.ai_notes ? `<div class="notes"><b>הערות העורך האוטומטי:</b> ${esc(a.ai_notes)}</div>` : ""}
       <div class="src">${a.score ? `<span class="score">⭐ ${a.score}/10</span> · ` : ""}${esc(timeAgo(a.created_at))}${a.source_name ? " · מקור: " + (a.source_url ? `<a href="${esc(a.source_url)}" target="_blank" rel="noopener">${esc(a.source_name)}</a>` : esc(a.source_name)) : ""}</div>
       <label>כותרת</label><input type="text" class="title" data-f="title" value="${esc(a.title)}">
