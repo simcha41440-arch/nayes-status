@@ -284,6 +284,12 @@ async function main() {
   const batch = fresh.slice(0, MAX_PER_RUN);
   console.log(`נמצאו ${fresh.length} ידיעות חדשות, מעבד ${batch.length}.`);
 
+  // כותרות שכבר פורסמו, כדי שהעורך לא יפרסם את אותו אירוע פעמיים
+  const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+  const { data: recentRows } = await db().from("articles").select("title").eq("status", "published")
+    .gte("published_at", since12).order("published_at", { ascending: false }).limit(60);
+  const recentTitles = (recentRows || []).map((r) => r.title);
+
   let accepted = 0;
   let rejected = 0;
   const newTitles = [];
@@ -291,7 +297,7 @@ async function main() {
   for (const item of batch) {
     let art;
     try {
-      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link });
+      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link, recentTitles });
     } catch (err) {
       console.warn(`⚠ עיבוד נכשל (${item.link}): ${err.message}`);
       continue; // לא נשמר, ולכן ינוסה שוב בריצה הבאה
@@ -408,6 +414,7 @@ async function main() {
     }
     accepted++;
     console.log(`  ✓ [${item.source.name}] ${art.score}/10 ${publishNow ? "פורסם" : "ממתין"}: ${art.title}`);
+    if (publishNow) recentTitles.unshift(art.title);
     newTitles.push(`${art.is_breaking ? "🔴 " : "• "}${art.title} (${art.score}/10)`);
   }
 
