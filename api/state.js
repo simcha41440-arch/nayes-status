@@ -7,11 +7,11 @@ export default async function handler(req, res) {
     getState(),
     readTelegram("PikudHaOref_all", { timeoutMs: 8000 }).then((r) => r.posts || []).catch(() => []),
   ]);
-  const day = Date.now() - 24 * 3600 * 1000;
+  // ההודעות האחרונות מהערוץ (גם אם ישנות; כל הודעה מוצגת עם הזמן שלה)
   const posts = (oref || [])
-    .filter((p) => p.text && Date.parse(p.date) > day)
+    .filter((p) => p.text && p.date)
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, 12)
+    .slice(0, 10)
     .map((p) => ({ text: p.text.slice(0, 1200), date: p.date }));
   const em = state.emergency && state.emergency.on ? state.emergency : null;
   res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");

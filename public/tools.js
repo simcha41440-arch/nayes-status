@@ -177,8 +177,8 @@
       ${em ? `<div class="alert-bar red static">${icon("alert", 20)}<span><b>${esc(em.title)}</b>${em.text ? ` ${esc(em.text)}` : ""}</span></div>` : ""}
       <h3 class="sheet-h">הודעות אחרונות מפיקוד העורף</h3>
       <div class="oref-list">${state.oref.length
-        ? state.oref.map((p) => `<div class="oref-item"><small>${esc(timeAgo(p.date))} · ${esc(clock(p.date))}</small><p>${esc(p.text)}</p></div>`).join("")
-        : `<div class="empty" style="padding:18px">אין הודעות מהיממה האחרונה.</div>`}</div>
+        ? state.oref.map((p) => `<div class="oref-item"><small>${esc(timeAgo(p.date))}${Date.now() - Date.parse(p.date) < 864e5 ? ` · ${esc(clock(p.date))}` : ""}</small><p>${esc(p.text)}</p></div>`).join("")
+        : `<div class="empty" style="padding:18px">לא הצלחנו לטעון את ההודעות כרגע. נסו שוב בעוד דקה.</div>`}</div>
       <p class="zm-note">ההודעות מועתקות אוטומטית מהערוץ הרשמי של פיקוד העורף. בזמן אמת, ההתרעה הקובעת היא זו שבאפליקציה הרשמית ובאזעקה עצמה.</p>
       <h3 class="sheet-h">איך מתנהגים באזעקה</h3>
       <div class="guide">${GUIDES.map(([h, p]) => `<div><b>${esc(h)}</b><p>${esc(p)}</p></div>`).join("")}</div>
