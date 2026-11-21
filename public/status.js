@@ -459,7 +459,7 @@
       </div>` : ""}
       <div class="acts">
         <button id="wa">${icon("whatsapp", 20)}<span>וואטסאפ</span></button>
-        <button id="send">${icon("share", 20)}<span>שליחה לחבר</span></button>
+        <button id="send">${icon("share", 20)}<span>מייל ועוד</span></button>
         <button id="copy">${icon("link", 20)}<span>העתקת קישור</span></button>
         <button id="p-close">${icon("close", 20)}<span>סגירה</span></button>
       </div>`;
@@ -476,21 +476,16 @@
     $("p-close").onclick = closePanel;
     $("send").onclick = () => shareArticle(a);
     $("wa").onclick = () => shareWhatsApp(a);
-    $("fwd").onclick = (e) => { e.stopPropagation(); setPaused(true); shareArticle(a).finally(() => { if (!$("panel").classList.contains("open")) setPaused(false); }); };
+    $("fwd").onclick = (e) => { e.stopPropagation(); setPaused(true); shareArticle(a); };
   }
 
   // ---------- שיתוף ----------
-  const shareText = (a) => `${a.title}\n${a.summary ? a.summary + "\n" : ""}\nנייעס סטטוס, רק מה ששווה לדעת:\n${location.origin + articleUrl(a)}`;
+  const shareOpts = (a) => ({ title: a.title, text: `${a.title}${a.summary ? "\n" + a.summary : ""}\n\nנייעס סטטוס, רק מה ששווה לדעת:`, url: location.origin + articleUrl(a) });
   function shareWhatsApp(a) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText(a))}`, "_blank", "noopener");
+    const o = shareOpts(a);
+    window.open(`https://wa.me/?text=${encodeURIComponent(o.text + "\n" + o.url)}`, "_blank", "noopener");
   }
-  async function shareArticle(a) {
-    const url = location.origin + articleUrl(a);
-    try {
-      if (navigator.share) await navigator.share({ title: a.title, text: `${a.title}\n`, url });
-      else shareWhatsApp(a);
-    } catch {}
-  }
+  async function shareArticle(a) { openShare(shareOpts(a)); }
 
   function reactWith(a, emoji) {
     flyer(emoji);

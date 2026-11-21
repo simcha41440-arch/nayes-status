@@ -253,6 +253,9 @@ const ICON_PATHS = {
   // ממשק
   smile: '<circle cx="12" cy="12" r="9"/><path d="M8.2 14.2a4.6 4.6 0 0 0 7.6 0"/><circle cx="9" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/>',
   share: '<path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+  sms: '<path d="M4 18.5V6.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8z"/><circle cx="8.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="12" cy="10.5" r=".9" fill="currentColor"/><circle cx="15.5" cy="10.5" r=".9" fill="currentColor"/>',
+  telegram: '<path d="M21 4 3 11l6 2.2L18 7l-7 7.5V20l3.2-3.6L18 19z"/>',
   link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   install: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/>',
@@ -283,4 +286,37 @@ const ICON_PATHS = {
 
 function icon(name, size = 24, stroke = 1.8) {
   return `<svg class="i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name] || ""}</svg>`;
+}
+
+// ---------- חלון שיתוף: וואטסאפ, מייל, SMS, טלגרם, העתקת קישור ועוד ----------
+function openShare({ title = "נייעס סטטוס", text = "", url = location.origin + "/" } = {}) {
+  const full = `${text ? text + "\n" : ""}${url}`;
+  const enc = encodeURIComponent;
+  const opts = [
+    ["whatsapp", "וואטסאפ", `https://wa.me/?text=${enc(full)}`, "#1f9d55"],
+    ["mail", "מייל", `mailto:?subject=${enc(title)}&body=${enc(full)}`, "#3d6e9e"],
+    ["sms", "הודעת SMS", `sms:?&body=${enc(full)}`, "#6f4396"],
+    ["telegram", "טלגרם", `https://t.me/share/url?url=${enc(url)}&text=${enc(text || title)}`, "#2a9fd6"],
+    ["link", "העתקת קישור", "", "#4a5d75"],
+  ];
+  if (navigator.share) opts.push(["share", "עוד אפשרויות", "", "#c0612b"]);
+  const back = document.createElement("div");
+  back.className = "dlg-back share-back";
+  back.innerHTML = `<div class="dlg share-dlg" role="dialog" aria-modal="true" aria-label="שיתוף"><h3>שיתוף</h3>
+    <div class="share-grid">${opts.map(([k, label, href, c]) => href
+      ? `<a href="${esc(href)}" ${k === "mail" || k === "sms" ? "" : 'target="_blank" rel="noopener"'} data-k="${k}"><span style="background:${c}">${icon(k, 26, 1.7)}</span>${esc(label)}</a>`
+      : `<button data-k="${k}"><span style="background:${c}">${icon(k, 26, 1.7)}</span>${esc(label)}</button>`).join("")}</div>
+    <div class="btns"><button data-cancel>סגירה</button></div></div>`;
+  const close = () => back.remove();
+  back.addEventListener("click", (e) => { if (e.target === back) close(); });
+  back.querySelector("[data-cancel]").onclick = close;
+  back.querySelectorAll("a[data-k]").forEach((a) => a.addEventListener("click", () => setTimeout(close, 300)));
+  const copy = back.querySelector('[data-k="link"]');
+  copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(url); copy.lastChild.textContent = "הועתק ✓"; } catch { copy.lastChild.textContent = url; }
+    setTimeout(close, 900);
+  };
+  const more = back.querySelector('[data-k="share"]');
+  if (more) more.onclick = async () => { close(); try { await navigator.share({ title, text, url }); } catch {} };
+  document.body.appendChild(back);
 }

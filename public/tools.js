@@ -55,7 +55,7 @@
       tool("city", "city", city || "העיר שלי", "מבזקים מהעיר"),
       tool("consumer", "consumer", "צרכנות", "ריקולים ומחירים"),
       lastYear.length ? tool("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`) : "",
-      tool("share", "whatsapp", "שיתוף", "לשלוח לחברים"),
+      tool("share", "share", "שיתוף", "וואטסאפ, מייל ועוד"),
     ].join("");
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
@@ -82,13 +82,8 @@
   };
 
   // ---------- שיתוף האתר ----------
-  async function shareSite() {
-    const url = location.origin + "/";
-    const text = "נייעס סטטוס: המבזקים הכי חשובים לציבור החרדי, בסטטוסים קצרים. רק מה ששווה לדעת.";
-    try {
-      if (navigator.share) return await navigator.share({ title: "נייעס סטטוס", text, url });
-    } catch { return; }
-    window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + url)}`, "_blank", "noopener");
+  function shareSite() {
+    openShare({ title: "נייעס סטטוס", text: "נייעס סטטוס: המבזקים הכי חשובים לציבור החרדי, בסטטוסים קצרים. רק מה ששווה לדעת." });
   }
 
   // ---------- חלון מלא (כמו מסך החיפוש) ----------
@@ -155,7 +150,7 @@
       <div class="zm-date">${esc(hebrewDate(date))}</div>
       <div class="zm-list">${ZROWS.map(([k, label]) => `<div class="zm-row ${k === nextKey ? "next" : ""}"><span>${esc(label)}</span><b>${fmt(t[k])}</b></div>`).join("")}</div>
       ${entry}
-      <button class="btn zm-share" id="zm-share">${icon("whatsapp", 20)} שליחת הזמנים בוואטסאפ</button>
+      <button class="btn zm-share" id="zm-share">${icon("share", 20)} שליחת הזמנים</button>
       <p class="zm-note zm-warn">שימו לב: הזמנים מחושבים באופן ממוחשב ועלולים לסטות בכמה דקות. אין לסמוך עליהם בדיוק רב,
       ובפרט לא בדקות האחרונות שלפני סוף הזמן. יש להחמיר ולהקדים, ולעיין בלוח המקובל בקהילתכם.</p>
       <p class="zm-note">החישוב לפי מיקום העיר, בגובה פני הים. מג"א: מעלות השחר ועד צאת הכוכבים (16.1 מעלות).
@@ -165,8 +160,8 @@
     $("zm-city").onclick = () => chooseCity(() => openZmanim(offset));
     $("zm-share").onclick = () => {
       const lines = ZROWS.map(([k, label]) => `${label}: ${fmt(t[k])}`).join("\n");
-      const text = `זמני היום ב${city}\n${hebrewDate(date)}\n\n${lines}${tomorrowHoly ? `\nהדלקת נרות: ${fmt(t.candles)}` : ""}\n\n(הזמנים ממוחשבים ועלולים לסטות בכמה דקות)\nנייעס סטטוס: ${location.origin}/`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+      const text = `זמני היום ב${city}\n${hebrewDate(date)}\n\n${lines}${tomorrowHoly ? `\nהדלקת נרות: ${fmt(t.candles)}` : ""}\n\n(הזמנים ממוחשבים ועלולים לסטות בכמה דקות)\nנייעס סטטוס:`;
+      openShare({ title: `זמני היום ב${city}`, text, url: location.origin + "/" });
     };
   }
 

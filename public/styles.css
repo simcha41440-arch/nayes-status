@@ -456,3 +456,9 @@ html.walled body { overflow: hidden; }
 .snack-act { background: none; border: 0; color: #7fd1ff; font-weight: 700; cursor: pointer; margin-inline-start: 8px; }
 .reply-row .heart + .heart { margin-inline-start: 0; }
 .zm-warn { color: var(--ink-2); background: var(--soft); border-radius: 12px; padding: 10px 12px; }
+.share-dlg { width: min(100%, 400px); }
+.share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 14px 8px; }
+.share-grid a, .share-grid button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border: 0; background: none; border-radius: 14px; cursor: pointer; font-size: 13.5px; color: var(--ink); text-align: center; }
+.share-grid a:hover, .share-grid button:hover { background: var(--soft); }
+.share-grid span { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.share-back { z-index: 500; }
