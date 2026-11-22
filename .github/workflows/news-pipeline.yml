@@ -1,25 +1,40 @@
 name: צינור חדשות
 
+# הסריקה רצה בלולאה: כל 15 דקות בדיוק, במשך כמעט 6 שעות, ואז מפעילה את עצמה מחדש.
+# (התזמון של GitHub לבד מתעכב לפעמים בשעות, לכן הוא רק גיבוי פעם בשעה.)
 on:
   schedule:
-    - cron: "*/15 * * * *"   # כל 15 דקות (GitHub עלול לעכב בכמה דקות בשעות עומס)
+    - cron: "7 * * * *"      # גיבוי: אם הלולאה נעצרה מסיבה כלשהי, היא חוזרת תוך שעה
   workflow_dispatch: {}        # הפעלה ידנית מלשונית Actions
 
 concurrency:
   group: news-pipeline
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 358
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --omit=dev
-      - run: node pipeline/run.mjs
+      - name: סריקה כל 15 דקות
+        run: |
+          end=$(( $(date +%s) + 340*60 ))
+          while [ "$(date +%s)" -lt "$end" ]; do
+            start=$(date +%s)
+            git pull -q origin main || true          # עדכוני קוד נכנסים בלי לחכות לסבב הבא
+            timeout 13m node pipeline/run.mjs || echo "הריצה נכשלה או נמשכה יותר מדי. ממשיכים."
+            wait_for=$(( 900 - ($(date +%s) - start) ))
+            [ "$wait_for" -gt 0 ] && sleep "$wait_for"
+          done
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -31,3 +46,8 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL || 'https://www.nayesstatus.com' }}
           AUTO_VIDEO_SOUND: ${{ vars.AUTO_VIDEO_SOUND || 'true' }}   # קול בסרטונים אוטומטיים (false = בלי קול)
           AUTO_PUBLISH: ${{ vars.AUTO_PUBLISH || 'true' }}   # פרסום אוטומטי. רק מבזק רגיש במיוחד ימתין לאישור
+      - name: הפעלה מחדש של הלולאה
+        if: always()
+        run: gh workflow run news-pipeline.yml --ref main --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
