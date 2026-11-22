@@ -272,7 +272,7 @@ async function notifyTelegram(text) {
 }
 
 // ---------- שערי העיתונים של הבוקר (רק מה שעובר את בדיקת הצניעות) ----------
-const FRONT_PAGES = [{ key: "yedioth_ahronoth", name: "ידיעות אחרונות" }];
+const FRONT_PAGES = []; // ידיעות אחרונות הוסר לבקשת בעל האתר. העיתונים החרדיים יתווספו כשיימצא מקור אוטומטי.
 
 async function frontPages(hm) {
   if (hm < 360 || hm >= 720) return; // רק בין 06:00 ל-12:00
