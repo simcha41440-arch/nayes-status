@@ -19,9 +19,12 @@ const frames = await Promise.all((await readdir(dir)).sort().map(async (f) => {
   const buffer = await readFile(path.join(dir, f));
   return { base64: buffer.toString("base64"), mediaType: "image/jpeg", buffer };
 }));
-const check = await checkFrames(frames);
-if (!check.approved) throw new Error("הסרטון לא עבר בדיקה: " + check.reason);
-console.log("✓ הסרטון עבר בדיקה");
+// סרטון שבעל האתר עצמו מעלה: עולה בלי בדיקה (הבדיקה האוטומטית היא רק לתוכן שעולה לבד או שגולשים שולחים)
+if (process.env.SKIP_CHECK !== "true") {
+  const check = await checkFrames(frames);
+  if (!check.approved) throw new Error("הסרטון לא עבר בדיקה: " + check.reason);
+  console.log("✓ הסרטון עבר בדיקה");
+}
 
 const id = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}`;
 const store = async (name, buf, type) => {

@@ -8,6 +8,7 @@ on:
       body: { required: false, default: "" }
       category: { required: false, default: "general" }
       credit: { required: false, default: "" }
+      skip_check: { description: "בעל האתר העלה: בלי בדיקה", required: false, default: "true" }
 jobs:
   upload:
     runs-on: ubuntu-24.04
@@ -29,3 +30,4 @@ jobs:
           POST_BODY: ${{ inputs.body }}
           POST_CATEGORY: ${{ inputs.category }}
           POST_CREDIT: ${{ inputs.credit }}
+          SKIP_CHECK: ${{ inputs.skip_check }}
