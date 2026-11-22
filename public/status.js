@@ -425,7 +425,12 @@
 
     const title = esc(a.title);
     const hotTag = a.is_breaking ? `<span class="hot-pill">${icon("hot", 15, 2)} דחוף</span>` : "";
-    $("s-media").innerHTML = a.video_url
+    const yt = /^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}$/.test(a.video_url || "");
+    document.getElementById("stage").classList.toggle("has-yt", yt);
+    $("s-media").innerHTML = yt
+      ? `<div class="s-img s-yt"><iframe src="${esc(a.video_url)}?rel=0&modestbranding=1&playsinline=1" title="${title}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+         ${caption(title, a.summary, a.image_credit)}`
+      : a.video_url
       ? `<div class="s-img"><video id="s-video" src="${esc(a.video_url)}" ${a.image_url ? `poster="${esc(a.image_url)}"` : ""} playsinline muted preload="auto"></video></div>
          ${a.video_sound ? `<button class="ico sound-btn" id="sound-btn" aria-label="קול"></button>` : ""}
          ${caption(title, a.summary, a.image_credit)}`
@@ -436,6 +441,7 @@
          ${a.impact ? `<p class="tip">מה זה אומר עליך? ${esc(a.impact)}</p>` : ""}</div>`;
     setupVideo(a);
     setupCaption();
+    if (yt) setTimeout(() => setPaused(true), 0); // סרטון מיוטיוב: לא עוברים הלאה לבד, הצופה מחליט
 
     $("s-foot").innerHTML = `
       <button class="chev" id="chev" aria-label="עוד">${ICON_CHEV}</button>

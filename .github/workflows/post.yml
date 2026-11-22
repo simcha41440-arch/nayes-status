@@ -8,6 +8,8 @@ on:
       category: { description: "קטגוריה", required: false, default: "general" }
       source: { description: "מקור", required: false, default: "מערכת נייעס סטטוס" }
       slug: { description: "לעדכון מבזק קיים", required: false, default: "" }
+      youtube: { description: "קישור לסרטון ביוטיוב (מוטמע)", required: false, default: "" }
+      credit: { description: "קרדיט לסרטון", required: false, default: "" }
 jobs:
   post:
     runs-on: ubuntu-24.04
@@ -26,3 +28,6 @@ jobs:
           POST_CATEGORY: ${{ inputs.category }}
           POST_SOURCE: ${{ inputs.source }}
           POST_SLUG: ${{ inputs.slug }}
+          POST_YOUTUBE: ${{ inputs.youtube }}
+          POST_CREDIT: ${{ inputs.credit }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -502,3 +502,8 @@ body.has-viewer .fab-mini { display: none; }
 .send-consent input { width: 20px; height: 20px; accent-color: var(--brand); margin-top: 2px; flex: none; }
 .send-note { color: var(--muted); font-size: 12.5px; }
 .send-page form[hidden], #send-login[hidden] { display: none !important; }
+
+/* סרטון מוטמע מיוטיוב */
+.s-yt { display: flex; align-items: center; justify-content: center; }
+.s-yt iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; position: relative; z-index: 5; }
+.stage.has-yt .tap { display: none; }
