@@ -9,6 +9,8 @@ for (const u of urls) {
     const title = (/<title[^>]*>([^<]*)/i.exec(html) || [])[1] || "";
     const og = (/property=["']og:image["'][^>]*content=["']([^"']+)/i.exec(html) || /content=["']([^"']+)["'][^>]*property=["']og:image/i.exec(html) || [])[1] || "";
     const imgs = [...new Set([...html.matchAll(/(https?:)?\/\/[^"'\s)]+?\.(?:jpe?g|png|webp)(?:\?[^"'\s)]*)?/gi)].map((m) => m[0]))].slice(0, 25);
+    const yt = [...new Set([...html.matchAll(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/g)].map((m) => m[1]))];
+    if (yt.length) console.log(`\n*** YOUTUBE ${u}: ${yt.join(" ")}`);
     console.log(`\n=== ${r.status} ${u}\n  title: ${title.trim().slice(0, 100)}\n  og: ${og}\n  ${imgs.join("\n  ")}`);
   } catch (e) { console.log(`\n=== FAIL ${u} ${e.message}`); }
 }
