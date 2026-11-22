@@ -381,6 +381,10 @@ async function main() {
     }
   } catch (err) { console.log("ניסוח מחדש:", err.message); }
 
+  // תיקון כותרת לבקשת בעל האתר (חד-פעמי; אחרי שתוקן, לא משנה כלום)
+  await db().from("articles").update({ title: "שמחת נישואי נכדת הגאון רבי שאול אלתר שליט\"א" })
+    .eq("slug", "20261122-c4e3jv").like("title", "בשמחה רבה%").then(() => {}, () => {});
+
   // הודעת "פרסמו אצלנו" מהימים הראשונים יורדת מהאתר
   await db().from("articles").update({ status: "rejected" }).eq("slug", "welcome-5").eq("status", "published").then(() => {}, () => {});
 
