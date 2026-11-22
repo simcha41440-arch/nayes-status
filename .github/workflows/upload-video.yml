@@ -17,7 +17,7 @@ jobs:
         with: { ref: upload-tmp, path: incoming }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: sudo apt-get install -y -qq ffmpeg > /dev/null
+      - run: which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null)
       - run: npm install --omit=dev
       - run: node scripts/upload-video.mjs "incoming/${{ inputs.file }}"
         env:
