@@ -9,6 +9,7 @@
 // הרצה ידנית:  npm run pipeline
 
 import crypto from "node:crypto";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
@@ -350,6 +351,8 @@ async function frontPages(hm) {
 }
 
 async function main() {
+  // מתג השהיה: כשהקובץ pipeline/PAUSED קיים, אין עדכונים בכלל
+  if (existsSync(new URL("./PAUSED", import.meta.url))) { console.log("החדשות מושהות."); return; }
   // עד שמגדירים את המפתחות ב-GitHub, הסריקה פשוט מדלגת (בלי שגיאות ובלי מיילים על כישלון).
   const missing = ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !process.env[k]);
   if (missing.length) {

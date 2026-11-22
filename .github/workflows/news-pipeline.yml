@@ -31,6 +31,7 @@ jobs:
           while [ "$(date +%s)" -lt "$end" ]; do
             start=$(date +%s)
             git pull -q origin main || true          # עדכוני קוד נכנסים בלי לחכות לסבב הבא
+            if [ -f pipeline/PAUSED ]; then echo "החדשות מושהות (pipeline/PAUSED)."; exit 0; fi
             timeout 13m node pipeline/run.mjs || echo "הריצה נכשלה או נמשכה יותר מדי. ממשיכים."
             wait_for=$(( 900 - ($(date +%s) - start) ))
             [ "$wait_for" -gt 0 ] && sleep "$wait_for"
@@ -48,6 +49,9 @@ jobs:
           AUTO_PUBLISH: ${{ vars.AUTO_PUBLISH || 'true' }}   # פרסום אוטומטי. רק מבזק רגיש במיוחד ימתין לאישור
       - name: הפעלה מחדש של הלולאה
         if: always()
-        run: gh workflow run news-pipeline.yml --ref main --repo "${{ github.repository }}"
+        run: |
+          git pull -q origin main || true
+          if [ -f pipeline/PAUSED ]; then echo "מושהה: לא מפעילים מחדש."; exit 0; fi
+          gh workflow run news-pipeline.yml --ref main --repo "${{ github.repository }}"
         env:
           GH_TOKEN: ${{ github.token }}
