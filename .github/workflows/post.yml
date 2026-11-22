@@ -2,8 +2,9 @@ name: פרסום ידני
 on:
   workflow_dispatch:
     inputs:
-      title: { description: "כותרת", required: true }
-      summary: { description: "טקסט המבזק", required: true }
+      title: { description: "כותרת", required: false, default: "" }
+      summary: { description: "טקסט המבזק", required: false, default: "" }
+      unpublish: { description: "להוריד מבזקים (מזהים מופרדים בפסיק)", required: false, default: "" }
       body: { description: "עוד פרטים", required: false, default: "" }
       category: { description: "קטגוריה", required: false, default: "general" }
       source: { description: "מקור", required: false, default: "מערכת נייעס סטטוס" }
@@ -28,6 +29,7 @@ jobs:
           POST_CATEGORY: ${{ inputs.category }}
           POST_SOURCE: ${{ inputs.source }}
           POST_SLUG: ${{ inputs.slug }}
+          POST_UNPUBLISH: ${{ inputs.unpublish }}
           POST_YOUTUBE: ${{ inputs.youtube }}
           POST_CREDIT: ${{ inputs.credit }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

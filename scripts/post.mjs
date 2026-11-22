@@ -12,6 +12,14 @@ async function youtube(input) {
   if (!stored.approved) throw new Error("תמונת הסרטון לא עברה בדיקה: " + stored.reason);
   return { video_url: `https://www.youtube-nocookie.com/embed/${id}`, image_url: stored.url };
 }
+// הורדת מבזקים מהאתר: POST_UNPUBLISH=slug1,slug2
+if (process.env.POST_UNPUBLISH) {
+  const slugs = process.env.POST_UNPUBLISH.split(",").map((x) => x.trim()).filter(Boolean);
+  const { error } = await db().from("articles").update({ status: "rejected" }).in("slug", slugs);
+  if (error) throw error;
+  console.log(`הורדו: ${slugs.join(", ")}`);
+  process.exit(0);
+}
 const { POST_TITLE, POST_SUMMARY, POST_BODY, POST_CATEGORY, POST_SOURCE, POST_SLUG, POST_YOUTUBE, POST_CREDIT } = process.env;
 const media = POST_YOUTUBE ? await youtube(POST_YOUTUBE.trim()) : {};
 if (POST_YOUTUBE) media.image_credit = POST_CREDIT || "וידאו: יוטיוב";
