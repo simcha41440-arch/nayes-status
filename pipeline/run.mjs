@@ -347,7 +347,7 @@ async function main() {
       // בלי פאדיחות: ידיעה ישנה (למשל מהלילה) לא מסומנת "דחוף"
       if (art.relevant && ageHours != null && ageHours > 3) art.is_breaking = false;
       // שירים חדשים: לא בימי ספירת העומר ובין המצרים
-      if (art.relevant && art.category === "music" && globalThis.Zmanim.noMusic(globalThis.Zmanim.israelYMD(new Date()))) {
+      if (art.relevant && (art.category === "music" || item.source.category === "music") && globalThis.Zmanim.noMusic(globalThis.Zmanim.israelYMD(new Date()))) {
         art = { relevant: false, reject_reason: "שירים חדשים: לא בימי ספירה ובין המצרים" };
       }
     } catch (err) {
