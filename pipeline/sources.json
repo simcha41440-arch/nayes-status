@@ -113,5 +113,13 @@
     "media": true,
     "enabled": true,
     "category": "world"
+  },
+  {
+    "name": "JDN מוזיקה",
+    "url": "https://www.jdn.co.il/music/feed/",
+    "category": "music",
+    "city": "",
+    "media": false,
+    "enabled": true
   }
 ]
