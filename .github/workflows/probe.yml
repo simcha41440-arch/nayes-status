@@ -1,0 +1,13 @@
+name: בדיקת דפים
+on:
+  workflow_dispatch:
+    inputs:
+      urls: { description: "כתובות מופרדות ברווח", required: true }
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/probe.mjs ${{ inputs.urls }}
