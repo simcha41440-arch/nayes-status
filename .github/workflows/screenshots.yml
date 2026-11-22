@@ -1,5 +1,8 @@
 name: צילומי מסך
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      slug: { description: "צילום של מבזק אחד (לא חובה)", required: false, default: "" }
 permissions:
   contents: write
 jobs:
@@ -11,6 +14,8 @@ jobs:
         with: { node-version: 22 }
       - run: npm install --no-save playwright@1.56.1 && npx playwright install --with-deps chromium
       - run: node scripts/screenshots.cjs shots
+        env:
+          ONLY_SLUG: ${{ inputs.slug }}
       - name: שמירה בענף screenshots
         run: |
           cd shots

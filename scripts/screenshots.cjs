@@ -12,6 +12,20 @@ require("fs").mkdirSync(out, { recursive: true });
   const shot = async (name, opts = {}) => { await p.waitForTimeout(opts.wait ?? 900); await p.screenshot({ path: `${out}/${name}.png`, ...opts.s }); console.log("✓", name); };
   const pauseViewer = () => p.evaluate(() => { const s = document.getElementById("stage"); s && s.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 200, clientY: 400 })); });
 
+  // צילום של מבזק אחד בלבד (ONLY_SLUG)
+  if (process.env.ONLY_SLUG) {
+    await p.goto(`${SITE}/article/${process.env.ONLY_SLUG}`, { waitUntil: "networkidle" });
+    await shot("מבזק-נייד", { wait: 4000 });
+    await p.evaluate(() => document.getElementById("chev") && document.getElementById("chev").click());
+    await shot("מבזק-נייד-עוד-פרטים", { wait: 800 });
+    const dsk = await (await b.newContext({ viewport: { width: 1440, height: 900 }, locale: "he-IL", serviceWorkers: "block" })).newPage();
+    await dsk.goto(`${SITE}/article/${process.env.ONLY_SLUG}`, { waitUntil: "networkidle" });
+    await dsk.waitForTimeout(4000);
+    await dsk.screenshot({ path: `${out}/מבזק-מחשב.png` });
+    await b.close();
+    return;
+  }
+
   // מסך הבית
   await p.goto(SITE + "/", { waitUntil: "networkidle" });
   await shot("01-בית", { wait: 1800 });
