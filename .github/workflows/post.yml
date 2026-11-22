@@ -1,0 +1,26 @@
+name: פרסום ידני
+on:
+  workflow_dispatch:
+    inputs:
+      title: { description: "כותרת", required: true }
+      summary: { description: "טקסט המבזק", required: true }
+      body: { description: "עוד פרטים", required: false, default: "" }
+      category: { description: "קטגוריה", required: false, default: "general" }
+      source: { description: "מקור", required: false, default: "מערכת נייעס סטטוס" }
+jobs:
+  post:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --omit=dev
+      - run: node scripts/post.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          POST_TITLE: ${{ inputs.title }}
+          POST_SUMMARY: ${{ inputs.summary }}
+          POST_BODY: ${{ inputs.body }}
+          POST_CATEGORY: ${{ inputs.category }}
+          POST_SOURCE: ${{ inputs.source }}
