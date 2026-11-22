@@ -343,7 +343,7 @@ async function main() {
     let art;
     try {
       const ageHours = item.when ? (Date.now() - item.when) / 3600000 : null;
-      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link, recentTitles, ageHours });
+      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link, recentTitles, ageHours, lowTrust: item.source.trust === "low" });
       // בלי פאדיחות: ידיעה ישנה (למשל מהלילה) לא מסומנת "דחוף"
       if (art.relevant && ageHours != null && ageHours > 3) art.is_breaking = false;
       // שירים חדשים: לא בימי ספירת העומר ובין המצרים
