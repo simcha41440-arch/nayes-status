@@ -12,7 +12,7 @@ import crypto from "node:crypto";
 import { readFile } from "node:fs/promises";
 import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
-import { writeArticle, prefilter } from "../api/_lib/ai.js";
+import { writeArticle, prefilter, rephraseWithout } from "../api/_lib/ai.js";
 import { fetchImage, checkAndStore } from "../api/_lib/media.js";
 import { checkFrames } from "../api/_lib/ai.js";
 import { readTelegram } from "../api/_lib/telegram.js";
@@ -288,6 +288,20 @@ async function main() {
       console.log(`הוסרו תמונות אילוסטרציה מ-${ids.length} מבזקים שלא מתאימה להם תמונה כזו.`);
     }
   } catch (err) { console.log("ניקוי תמונות:", err.message); }
+
+  // ניסוח: מבזקים מהימים האחרונים עם מילים כמו "צניעות" או "דתי" מנוסחים מחדש (עד 3 בכל ריצה)
+  try {
+    const BAD = /(^|[\s"'(״׳-])[בוהלמש]{0,2}(צניעות|צנוע\S*|דת|דתי\S*|חילוני\S*)(?=$|[\s.,:;!?"')״׳-])/;
+    const since = new Date(Date.now() - 3 * 86400000).toISOString();
+    const { data: rows } = await db().from("articles").select("id,title,summary,body").eq("status", "published").gte("published_at", since).limit(300);
+    for (const a of (rows || []).filter((r) => BAD.test(`${r.title} ${r.summary || ""} ${r.body || ""}`)).slice(0, 3)) {
+      const r = await rephraseWithout(a);
+      if (r && r.title && !r.refused) {
+        await db().from("articles").update({ title: r.title, summary: r.summary, body: r.body || null }).eq("id", a.id);
+        console.log(`נוסח מחדש: "${a.title}" ← "${r.title}"`);
+      }
+    }
+  } catch (err) { console.log("ניסוח מחדש:", err.message); }
 
   // הודעת "פרסמו אצלנו" מהימים הראשונים יורדת מהאתר
   await db().from("articles").update({ status: "rejected" }).eq("slug", "welcome-5").eq("status", "published").then(() => {}, () => {});

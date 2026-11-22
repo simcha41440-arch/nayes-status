@@ -82,6 +82,8 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
 - לשון הרע: בלי השמצות ובלי חשיפת פרטים מביישים. בחשדות פליליים כתוב "נחשד", "לפי החשד".
 - אל תפסוק הלכה. בנושאים הלכתיים דווח רק מה אמרו הרבנים או הגופים המוסמכים.
 - בתארים של גדולי ישראל השתמש בתארים המקובלים ובכבוד הראוי.
+- אל תכתוב מילים כמו "צניעות", "צנוע", "דת", "דתי", "חילוני" או תיאורים של רמת דתיות, לא בכותרת ולא בטקסט.
+  תאר את האירוע עצמו (למשל "חתונה בשמחה רבה ובאווירה חמה", ולא "חתונה צנועה").
 - כתוב במילים שלך. אל תעתיק משפטים מהמקור (זכויות יוצרים).
 
 ## המבנה
@@ -287,4 +289,23 @@ export async function prefilter(items, recentTitles = []) {
     console.warn("סינון ראשוני נכשל, כל הידיעות עוברות לעורך:", err.message);
     return items.map(() => ({ pass: true, reason: "" }));
   }
+}
+
+// ---------- ניסוח מחדש של מבזק שפורסם עם מילים שלא רוצים באתר ----------
+const REPHRASE_SCHEMA = {
+  type: "object",
+  properties: { title: { type: "string" }, summary: { type: "string" }, body: { type: "string" } },
+  required: ["title", "summary", "body"],
+  additionalProperties: false,
+};
+
+/** מנסח מחדש כותרת, מבזק ופרטים בלי המילים האסורות, בלי לשנות עובדות. */
+export async function rephraseWithout(article) {
+  const content = `נסח מחדש את המבזק בלי המילים "צניעות", "צנוע", "דת", "דתי", "חילוני" ובלי תיאורים של רמת דתיות.
+שמור על כל העובדות, על הסגנון ועל האורך. אל תוסיף מידע. body יכול להיות ריק אם הוא ריק במקור.
+
+כותרת: ${article.title}
+מבזק: ${article.summary || ""}
+פרטים: ${article.body || ""}`;
+  return askJson({ system: EDITOR_SYSTEM, content, schema: REPHRASE_SCHEMA, maxTokens: 3000 });
 }
