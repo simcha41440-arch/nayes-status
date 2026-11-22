@@ -153,5 +153,60 @@
     "credit": "דובר צה\"ל",
     "media": true,
     "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "ynetalerts",
+    "name": "ynet מבזקים",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "calcalist",
+    "name": "כלכליסט",
+    "media": false,
+    "enabled": true,
+    "category": "economy"
+  },
+  {
+    "type": "telegram",
+    "channel": "newsil",
+    "name": "חדשות ישראל בטלגרם",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "abualiexpress",
+    "name": "אבו עלי אקספרס",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "amitsegal",
+    "name": "עמית סגל",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "hagizra",
+    "name": "הגיזרה",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "mivzakim",
+    "name": "מבזקים.נט",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
   }
 ]
