@@ -441,7 +441,7 @@
          ${a.impact ? `<p class="tip">מה זה אומר עליך? ${esc(a.impact)}</p>` : ""}</div>`;
     setupVideo(a);
     setupCaption();
-    if (yt) setTimeout(() => setPaused(true), 0); // סרטון מיוטיוב: לא עוברים הלאה לבד, הצופה מחליט
+    if (yt) setTimeout(() => { viewer.paused = true; }, 0); // סרטון מיוטיוב: לא עוברים הלאה לבד, והכפתורים נשארים גלויים
 
     $("s-foot").innerHTML = `
       <button class="chev" id="chev" aria-label="עוד">${ICON_CHEV}</button>
