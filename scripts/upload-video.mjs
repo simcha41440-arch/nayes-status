@@ -11,6 +11,24 @@ const run = promisify(execFile);
 const file = process.argv[2];
 const { POST_TITLE, POST_SUMMARY, POST_BODY, POST_CATEGORY, POST_CREDIT } = process.env;
 
+// תמונה (לא סרטון): נשמרת ומתפרסמת ישר
+if (/\.(jpe?g|png|webp)$/i.test(file)) {
+  const ext = file.split(".").pop().toLowerCase().replace("jpeg", "jpg");
+  const type = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" }[ext];
+  const name = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
+  const { error: e1 } = await db().storage.from("media").upload(name, await readFile(file), { contentType: type });
+  if (e1) throw e1;
+  const slug = makeSlug();
+  const { error: e2 } = await db().from("articles").insert({
+    slug, status: "published", published_at: new Date().toISOString(), score: 7,
+    title: POST_TITLE, summary: POST_SUMMARY, body: POST_BODY || null, category: POST_CATEGORY || "general",
+    source_name: "מערכת נייעס סטטוס", image_url: `/media/${name}`, image_credit: POST_CREDIT || null,
+  });
+  if (e2) throw e2;
+  console.log(`פורסם: /article/${slug}`);
+  process.exit(0);
+}
+
 const dir = await mkdtemp(path.join(tmpdir(), "v-"));
 const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]);
 const dur = Number(stdout) || 10;
