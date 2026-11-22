@@ -4,6 +4,9 @@ import { checkAndStore } from "../api/_lib/media.js";
 
 // סרטון מיוטיוב: מוטמע באתר (לא מועתק). תמונת התצוגה שלו נבדקת לפני הפרסום.
 async function youtube(input) {
+  // רשימת השמעה (אלבום שלם)
+  const list = (/[?&]list=([A-Za-z0-9_-]+)/.exec(input) || [])[1];
+  if (list && !/[?&]v=/.test(input)) return { video_url: `https://www.youtube-nocookie.com/embed/videoseries?list=${list}`, image_url: null };
   const id = (/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/.exec(input) || [])[1] || (/^[A-Za-z0-9_-]{11}$/.test(input) ? input : null);
   if (!id) throw new Error("קישור יוטיוב לא תקין");
   const r = await fetch(`https://img.youtube.com/vi/${id}/hqdefault.jpg`);
