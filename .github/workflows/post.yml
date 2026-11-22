@@ -7,6 +7,7 @@ on:
       body: { description: "עוד פרטים", required: false, default: "" }
       category: { description: "קטגוריה", required: false, default: "general" }
       source: { description: "מקור", required: false, default: "מערכת נייעס סטטוס" }
+      slug: { description: "לעדכון מבזק קיים", required: false, default: "" }
 jobs:
   post:
     runs-on: ubuntu-24.04
@@ -24,3 +25,4 @@ jobs:
           POST_BODY: ${{ inputs.body }}
           POST_CATEGORY: ${{ inputs.category }}
           POST_SOURCE: ${{ inputs.source }}
+          POST_SLUG: ${{ inputs.slug }}
