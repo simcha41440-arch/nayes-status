@@ -309,3 +309,29 @@ export async function rephraseWithout(article) {
 פרטים: ${article.body || ""}`;
   return askJson({ system: EDITOR_SYSTEM, content, schema: REPHRASE_SCHEMA, maxTokens: 3000 });
 }
+
+// ---------- שער של עיתון: בדיקה + קריאת הכותרת הראשית, בקריאה אחת ----------
+const FRONT_SCHEMA = {
+  type: "object",
+  properties: { approved: { type: "boolean" }, reason: { type: "string" }, headline: { type: "string" } },
+  required: ["approved", "reason", "headline"],
+  additionalProperties: false,
+};
+
+export async function checkFrontPage({ base64, mediaType }) {
+  const system = `${IMAGE_SYSTEM}
+
+הערה מיוחדת: התמונה היא שער של עיתון יומי. הלוגו של העיתון, כותרות ופסי פרסום של העיתון עצמו מותרים.
+כל שאר כללי המדיניות חלים במלואם על כל פרט בשער, כולל תמונות קטנות ופרסומות: אם יש בשער אישה או ילדה מעל גיל 6
+(גם קטנה, גם בפרסומת), לבוש לא צנוע, או כל דבר אחר שאסור: approved=false.
+headline: הכותרת הראשית של השער, מילה במילה כפי שהיא כתובה (עד 15 מילים). אם לא קריא: מחרוזת ריקה.`;
+  const result = await askJson({
+    system, maxTokens: 2000, schema: FRONT_SCHEMA,
+    content: [
+      { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+      { type: "text", text: "בדוק את השער לפי המדיניות וקרא את הכותרת הראשית." },
+    ],
+  });
+  if (result.refused) return { approved: false, reason: "הבדיקה נכשלה", headline: "" };
+  return result;
+}

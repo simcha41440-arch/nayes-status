@@ -12,7 +12,7 @@ import crypto from "node:crypto";
 import { readFile } from "node:fs/promises";
 import Parser from "rss-parser";
 import { db, makeSlug } from "../api/_lib/db.js";
-import { writeArticle, prefilter, rephraseWithout } from "../api/_lib/ai.js";
+import { writeArticle, prefilter, rephraseWithout, checkFrontPage } from "../api/_lib/ai.js";
 import { fetchImage, checkAndStore } from "../api/_lib/media.js";
 import { checkFrames } from "../api/_lib/ai.js";
 import { readTelegram } from "../api/_lib/telegram.js";
@@ -271,6 +271,41 @@ async function notifyTelegram(text) {
   }
 }
 
+// ---------- שערי העיתונים של הבוקר (רק מה שעובר את בדיקת הצניעות) ----------
+const FRONT_PAGES = [{ key: "yedioth_ahronoth", name: "ידיעות אחרונות" }];
+
+async function frontPages(hm) {
+  if (hm < 360 || hm >= 720) return; // רק בין 06:00 ל-12:00
+  const { y, m, d } = globalThis.Zmanim.israelYMD(new Date());
+  const ymd = `${y}${String(m).padStart(2, "0")}${String(d).padStart(2, "0")}`;
+  for (const p of FRONT_PAGES) {
+    const slug = `front-${ymd}-${p.key.replace(/_/g, "")}`;
+    const { data: exists } = await db().from("articles").select("id").eq("slug", slug).maybeSingle();
+    if (exists) continue;
+    const url = `https://img.kiosko.net/${y}/${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}/il/${p.key}.750.jpg`;
+    const r = await fetch(url).catch(() => null);
+    if (!r || !r.ok) continue; // השער של היום עוד לא עלה; ננסה בסבב הבא
+    const buffer = Buffer.from(await r.arrayBuffer());
+    const type = (r.headers.get("content-type") || "image/jpeg").split(";")[0];
+    const check = await checkFrontPage({ base64: buffer.toString("base64"), mediaType: type });
+    const title = `שער "${p.name}" הבוקר`;
+    if (!check.approved) {
+      console.log(`  ✗ שער "${p.name}": ${check.reason}`);
+      await db().from("articles").insert({ slug, title, status: "rejected", source_name: p.name, ai_notes: `שער עיתון נפסל: ${check.reason}`.slice(0, 500) });
+      continue;
+    }
+    const name = `front-${ymd}-${p.key}.jpg`;
+    const { error } = await db().storage.from("media").upload(name, buffer, { contentType: type, upsert: true });
+    if (error) { console.log(`  שער "${p.name}": ${error.message}`); continue; }
+    await db().from("articles").insert({
+      slug, title, status: "published", published_at: new Date().toISOString(),
+      summary: check.headline ? `הכותרת הראשית: "${check.headline}"` : `כך נראה הבוקר השער של "${p.name}".`,
+      category: "general", source_name: p.name, image_url: `/media/${name}`, image_credit: `שער "${p.name}"`,
+    });
+    console.log(`  ✓ שער "${p.name}" פורסם`);
+  }
+}
+
 async function main() {
   // עד שמגדירים את המפתחות ב-GitHub, הסריקה פשוט מדלגת (בלי שגיאות ובלי מיילים על כישלון).
   const missing = ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !process.env[k]);
@@ -320,6 +355,8 @@ async function main() {
     console.log(`${holy}: אין עדכונים. הסריקה תחזור במוצאי ${holy === "שבת" ? "שבת" : "החג"}.`);
     return;
   }
+  await frontPages(hm).catch((err) => console.log("שערי עיתונים:", err.message));
+
   const sources = await loadSources();
   if (!sources.length) {
     console.log("אין מקורות פעילים ב-sources.json. הוסף מקור וסמן enabled: true.");
