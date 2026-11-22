@@ -121,5 +121,37 @@
     "city": "",
     "media": false,
     "enabled": true
+  },
+  {
+    "name": "כיכר השבת",
+    "url": "https://www.kikar.co.il/feed",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "המחדש",
+    "url": "https://www.hm-news.co.il/feed/",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "אמס",
+    "url": "https://www.emess.co.il/feed/",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "idfofficial",
+    "name": "דובר צה\"ל",
+    "credit": "דובר צה\"ל",
+    "media": true,
+    "enabled": true
   }
 ]
