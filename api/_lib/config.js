@@ -15,6 +15,7 @@ export const CATEGORIES = {
   world: "עולם",
   tech: "טכנולוגיה",
   weather: "מזג אוויר",
+  music: "שירים חדשים",
 };
 
 export const CITIES = [

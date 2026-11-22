@@ -292,6 +292,14 @@ async function main() {
   // הודעת "פרסמו אצלנו" מהימים הראשונים יורדת מהאתר
   await db().from("articles").update({ status: "rejected" }).eq("slug", "welcome-5").eq("status", "published").then(() => {}, () => {});
 
+  // לילה: עד 01:00 כרגיל. מ-01:00 עד 06:00 רק פעמיים (02:30 ו-04:30). ב-06:00 חוזרים, עם מה שהיה בלילה.
+  const hm = (() => { const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date()).split(":").map(Number); return h * 60 + m; })();
+  const NIGHT_SLOTS = [150, 270]; // 02:30, 04:30
+  if (hm >= 60 && hm < 360 && !NIGHT_SLOTS.some((s) => hm >= s && hm < s + 15) && process.env.IGNORE_NIGHT !== "true") {
+    console.log("לילה: אין סריקה עכשיו. הסריקות הבאות ב-02:30, 04:30 ומ-06:00 כרגיל.");
+    return;
+  }
+
   // שבת וימים טובים: אין עדכונים בכלל (וגם לא עולה כסף)
   const holy = globalThis.Zmanim.holyNow(new Date());
   if (holy && process.env.IGNORE_SHABBAT !== "true") {
@@ -334,7 +342,14 @@ async function main() {
   for (const item of batch) {
     let art;
     try {
-      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link, recentTitles });
+      const ageHours = item.when ? (Date.now() - item.when) / 3600000 : null;
+      art = await writeArticle({ text: item.text, sourceName: item.source.name, sourceUrl: item.link, recentTitles, ageHours });
+      // בלי פאדיחות: ידיעה ישנה (למשל מהלילה) לא מסומנת "דחוף"
+      if (art.relevant && ageHours != null && ageHours > 3) art.is_breaking = false;
+      // שירים חדשים: לא בימי ספירת העומר ובין המצרים
+      if (art.relevant && art.category === "music" && globalThis.Zmanim.noMusic(globalThis.Zmanim.israelYMD(new Date()))) {
+        art = { relevant: false, reject_reason: "שירים חדשים: לא בימי ספירה ובין המצרים" };
+      }
     } catch (err) {
       console.warn(`⚠ עיבוד נכשל (${item.link}): ${err.message}`);
       continue; // לא נשמר, ולכן ינוסה שוב בריצה הבאה

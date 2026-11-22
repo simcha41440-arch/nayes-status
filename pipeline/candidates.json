@@ -1,16 +1,117 @@
 [
-  { "name": "ynet - מבזקים", "url": "https://www.ynet.co.il/Integration/StoryRss1854.xml", "kind": "commercial" },
-  { "name": "ynet - חדשות", "url": "https://www.ynet.co.il/Integration/StoryRss2.xml", "kind": "commercial" },
-  { "name": "וואלה - חדשות", "url": "https://rss.walla.co.il/feed/1", "kind": "commercial" },
-  { "name": "מעריב - חדשות", "url": "https://www.maariv.co.il/Rss/RssChadashot", "kind": "commercial" },
-  { "name": "ישראל היום", "url": "https://www.israelhayom.co.il/rss.xml", "kind": "commercial" },
-  { "name": "גלובס - כלכלה", "url": "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2", "kind": "commercial" },
-  { "name": "כלכליסט", "url": "https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml", "kind": "commercial" },
-  { "name": "JDN", "url": "https://www.jdn.co.il/feed/", "kind": "haredi" },
-  { "name": "חרדים10", "url": "https://www.haredim10.com/feed/", "kind": "haredi" },
-  { "name": "אקטואליק", "url": "https://actualic.co.il/feed/", "kind": "haredi" },
-  { "name": "בחדרי חרדים", "url": "https://www.bhol.co.il/rss/", "kind": "haredi" },
-  { "name": "כיכר השבת", "url": "https://www.kikar.co.il/rss", "kind": "haredi" },
-  { "name": "משרד הבריאות (gov.il)", "url": "https://www.gov.il/he/departments/ministry_of_health/RSS", "kind": "official" },
-  { "name": "השירות המטאורולוגי - אזהרות", "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_general_country_he.xml", "kind": "official" }
+  {
+    "name": "ynet - מבזקים",
+    "url": "https://www.ynet.co.il/Integration/StoryRss1854.xml",
+    "kind": "commercial"
+  },
+  {
+    "name": "ynet - חדשות",
+    "url": "https://www.ynet.co.il/Integration/StoryRss2.xml",
+    "kind": "commercial"
+  },
+  {
+    "name": "וואלה - חדשות",
+    "url": "https://rss.walla.co.il/feed/1",
+    "kind": "commercial"
+  },
+  {
+    "name": "מעריב - חדשות",
+    "url": "https://www.maariv.co.il/Rss/RssChadashot",
+    "kind": "commercial"
+  },
+  {
+    "name": "ישראל היום",
+    "url": "https://www.israelhayom.co.il/rss.xml",
+    "kind": "commercial"
+  },
+  {
+    "name": "גלובס - כלכלה",
+    "url": "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2",
+    "kind": "commercial"
+  },
+  {
+    "name": "כלכליסט",
+    "url": "https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml",
+    "kind": "commercial"
+  },
+  {
+    "name": "JDN",
+    "url": "https://www.jdn.co.il/feed/",
+    "kind": "haredi"
+  },
+  {
+    "name": "חרדים10",
+    "url": "https://www.haredim10.com/feed/",
+    "kind": "haredi"
+  },
+  {
+    "name": "אקטואליק",
+    "url": "https://actualic.co.il/feed/",
+    "kind": "haredi"
+  },
+  {
+    "name": "בחדרי חרדים",
+    "url": "https://www.bhol.co.il/rss/",
+    "kind": "haredi"
+  },
+  {
+    "name": "כיכר השבת",
+    "url": "https://www.kikar.co.il/rss",
+    "kind": "haredi"
+  },
+  {
+    "name": "משרד הבריאות (gov.il)",
+    "url": "https://www.gov.il/he/departments/ministry_of_health/RSS",
+    "kind": "official"
+  },
+  {
+    "name": "השירות המטאורולוגי - אזהרות",
+    "url": "https://ims.gov.il/sites/default/files/ims_data/rss/alert/rssAlert_general_country_he.xml",
+    "kind": "official"
+  },
+  {
+    "name": "JDN מוזיקה",
+    "url": "https://www.jdn.co.il/music/feed/",
+    "kind": "music"
+  },
+  {
+    "name": "JDN מוזיקה 2",
+    "url": "https://www.jdn.co.il/category/music/feed/",
+    "kind": "music"
+  },
+  {
+    "name": "חרדים10 מוזיקה",
+    "url": "https://www.haredim10.co.il/category/music/feed/",
+    "kind": "music"
+  },
+  {
+    "name": "כיכר השבת מוזיקה",
+    "url": "https://www.kikar.co.il/rss/music",
+    "kind": "music"
+  },
+  {
+    "name": "בחדרי חרדים מוזיקה",
+    "url": "https://www.bhol.co.il/rss/music",
+    "kind": "music"
+  },
+  {
+    "name": "אמס מוזיקה",
+    "url": "https://www.emess.co.il/category/music/feed/",
+    "kind": "music"
+  },
+  {
+    "name": "מוזיקה יהודית - JDN wp",
+    "url": "https://www.jdn.co.il/feed/?cat=music",
+    "kind": "music"
+  },
+  {
+    "name": "איכות מוזיקה",
+    "url": "https://www.icot.co.il/feed/",
+    "kind": "music"
+  },
+  {
+    "name": "שירונט יהודי",
+    "url": "https://www.yeshiva.org.il/rss",
+    "kind": "music"
+  }
 ]

@@ -122,5 +122,16 @@
     return holyName(tomorrow);
   }
 
-  root.Zmanim = { CITY_COORDS, dayTimes, holyName, holyNow, israelYMD, nextYMD, TZ };
+  /** ימי ספירת העומר ובין המצרים: בלי שירים חדשים (מחמירים: מט"ז ניסן עד ערב שבועות, ומי"ז תמוז עד י' אב) */
+  function noMusic(ymd) {
+    const { day, month } = hebrewParts(ymd);
+    if (month === "Nisan" && day >= 15) return true;
+    if (month === "Iyar") return true;
+    if (month === "Sivan" && day <= 5) return true;
+    if (month === "Tamuz" && day >= 17) return true;
+    if (month === "Av" && day <= 10) return true;
+    return false;
+  }
+
+  root.Zmanim = { CITY_COORDS, dayTimes, holyName, holyNow, israelYMD, nextYMD, noMusic, TZ };
 })(typeof window !== "undefined" ? window : globalThis);

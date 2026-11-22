@@ -12,6 +12,7 @@ const CATEGORIES = {
   world:     { name: "עולם",        emoji: "🌍" },
   tech:      { name: "טכנולוגיה",   emoji: "💡" },
   weather:   { name: "מזג אוויר",   emoji: "⛅" },
+  music:     { name: "שירים חדשים", emoji: "🎵" },
 };
 
 const REACTIONS = ["❤️", "😍", "😂", "😮", "😢", "🙏", "👏", "🎉", "💯"];
@@ -227,7 +228,7 @@ const DEMO_ADS = [
 
 const CHANNEL_COLORS = {
   hot: "#c0392b", general: "#243640", politics: "#3f4f8f", community: "#2f7566", torah: "#7d5b2e",
-  economy: "#c0612b", consumer: "#b5476b", megaphone: "#c0612b", share: "#1f9d55", zmanim: "#3d6e9e", oref: "#b23a2f", city: "#6f4396", memory: "#6b5a8e", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
+  economy: "#c0612b", consumer: "#b5476b", music: "#8a4fbf", megaphone: "#c0612b", share: "#1f9d55", zmanim: "#3d6e9e", oref: "#b23a2f", city: "#6f4396", memory: "#6b5a8e", local: "#6f4396", health: "#23807b", world: "#4a5d75", tech: "#5257b8", weather: "#2f7fb0",
 };
 
 const ICON_PATHS = {
@@ -245,6 +246,7 @@ const ICON_PATHS = {
   whatsapp: '<path d="M4 20l1.2-3.9A8.3 8.3 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 3 2.9 5.9 6 6.2l1.1-1.5-1.9-1-.9.8c-1-.4-2.1-1.5-2.5-2.5l.8-.9-1-1.9z"/>',
   city: '<path d="M3.5 20.5h17M5.5 20.5V9l5-3v14.5M10.5 20.5V4.5l8 4v12"/><path d="M13.5 11h2M13.5 14h2M13.5 17h2"/>',
   alert: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".9" fill="currentColor"/>',
+  music: '<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
   local: '<path d="M12 21s-7-6.1-7-11.8a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.2" r="2.6"/>',
   health: '<path d="M20.6 8.8c0 4.9-8.6 11.2-8.6 11.2S3.4 13.7 3.4 8.8A4.5 4.5 0 0 1 12 6.6a4.5 4.5 0 0 1 8.6 2.2z"/><path d="M6.5 12.2h2.8l1.4-2.7 2.6 5.3 1.4-2.6h2.8"/>',
   world: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.6 3.7 5.6 3.7 9s-1.3 6.4-3.7 9c-2.4-2.6-3.7-5.6-3.7-9S9.6 5.6 12 3z"/>',
