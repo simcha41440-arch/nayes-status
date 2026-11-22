@@ -296,14 +296,22 @@ async function commonsImage(search, mustWords = []) {
     if (!stored.approved) continue;
     const gpo = /government press office|\bgpo\b/i.test(text);
     const artist = stripTags(meta.Artist?.value || "").slice(0, 60);
-    return { url: stored.url, credit: gpo ? `צילום: לע"מ (${license})` : `צילום: ${artist || "ויקישיתוף"} / ויקישיתוף (${license})` };
+    // "צילום ארכיון": שלא ייראה כאילו התמונה צולמה באירוע שבידיעה
+    return { url: stored.url, credit: gpo ? `צילום ארכיון: לע"מ (${license})` : `צילום ארכיון: ${artist || "ויקישיתוף"} / ויקישיתוף (${license})` };
   }
   return null;
 }
 
-async function personImage(name) {
-  const last = name.trim().split(/\s+/).pop();
-  return (await commonsImage(`"${name}" "Government Press Office"`, [last])) || (await commonsImage(`"${name}"`, [last]));
+// אדם אחד או שניים ("A | B"). קודם מחפשים תמונה של שניהם יחד; אם אין, תמונה של החשוב מביניהם.
+async function personImage(query) {
+  const names = query.split("|").map((s) => s.trim()).filter(Boolean).slice(0, 2);
+  const last = (n) => n.split(/\s+/).pop();
+  if (names.length === 2) {
+    const both = await commonsImage(`"${names[0]}" "${names[1]}"`, names.map(last));
+    if (both) return { ...both, together: true };
+  }
+  const n = names[0];
+  return (await commonsImage(`"${n}" "Government Press Office"`, [last(n)])) || (await commonsImage(`"${n}"`, [last(n)]));
 }
 
 // ---------- שערי העיתונים של הבוקר (רק מה שעובר את בדיקת הצניעות) ----------
