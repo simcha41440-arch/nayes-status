@@ -56,6 +56,7 @@
 
       <div class="set-sec">עוד</div>
       ${row({ id: "installRow", ic: "phone", title: "התקנה למסך הבית", sub: "נייעס סטטוס כמו אפליקציה, בלי חנות אפליקציות" })}
+      ${row({ ic: "share", title: "שלחו לנו תמונה או סרטון", sub: "דוברים וקוראים: לפרסום עם קרדיט", href: "/send" })}
       ${row({ id: "shareSite", ic: "whatsapp", title: "שיתוף נייעס סטטוס", sub: "וואטסאפ, מייל, SMS, טלגרם או קישור" })}
       ${row({ ic: "chat", title: "יצירת קשר", sub: "שאלות, תיקונים ודיווח על טעות", href: "/about#contact" })}
       ${row({ ic: "info", title: "אודות ומדיניות תוכן", href: "/about" })}`;

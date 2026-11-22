@@ -515,7 +515,7 @@
   }
 
   // ---------- פניות ----------
-  const TOPICS = { general: "פנייה כללית", ads: "📣 פרסום", correction: "תיקון / טעות", message: "💬 הודעה ממשתמש", comment: "💭 תגובה", update: "📰 עדכון מקורא" };
+  const TOPICS = { media: "🎥 תמונה / סרטון לפרסום", general: "פנייה כללית", ads: "📣 פרסום", correction: "תיקון / טעות", message: "💬 הודעה ממשתמש", comment: "💭 תגובה", update: "📰 עדכון מקורא" };
   async function renderMessages(panel) {
     panel.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
     let list = [];
@@ -529,10 +529,27 @@
         <div class="src">${esc(TOPICS[m.topic] || m.topic)} · ${esc(timeAgo(m.created_at))}${m.done ? " · ✓ טופל" : ""}</div>
         <h3 style="margin:6px 0 2px">${esc(m.name)}</h3>
         <div class="src" dir="ltr" style="text-align:right">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : ""} ${m.email ? `<a href="mailto:${esc(m.email)}">${esc(m.email)}</a>` : ""}</div>
-        <p style="white-space:pre-wrap;margin:10px 0 0">${esc(m.body)}</p>
-        <div class="actions"><button class="btn ${m.done ? "ghost" : "green"}" data-a="done">${m.done ? "סמן כלא טופל" : "סמן כטופל"}</button>
+        ${(() => {
+          const at = (m.body || "").lastIndexOf("@@media ");
+          if (at < 0) return `<p style="white-space:pre-wrap;margin:10px 0 0">${esc(m.body)}</p>`;
+          let meta = {}; try { meta = JSON.parse(m.body.slice(at + 8)); } catch {}
+          return `<p style="white-space:pre-wrap;margin:10px 0 0">${esc(m.body.slice(0, at).trim())}</p>
+            <div class="src">קרדיט: ${esc(meta.credit || "")}</div>
+            ${meta.video ? `<video src="${esc(meta.video)}" poster="${esc(meta.image || "")}" controls playsinline style="width:100%;max-height:420px;border-radius:12px;margin-top:8px;background:#000"></video>`
+              : meta.image ? `<img src="${esc(meta.image)}" alt="" style="width:100%;max-height:420px;object-fit:contain;border-radius:12px;margin-top:8px;background:#000">` : ""}`;
+        })()}
+        <div class="actions">${m.topic === "media" && !m.done ? `<button class="btn green" data-a="pub">📢 פרסום כמבזק</button>` : ""}<button class="btn ${m.done ? "ghost" : "green"}" data-a="done">${m.done ? "סמן כלא טופל" : "סמן כטופל"}</button>
           ${m.user_id ? `<button class="btn ghost" data-a="reply">תשובה לפעמון שלו</button>` : ""}</div>
         <div class="dm"></div>`;
+      const pb = el.querySelector('[data-a="pub"]');
+      if (pb) pb.onclick = async () => {
+        pb.disabled = true; pb.textContent = "העורך כותב מבזק...";
+        try {
+          const r = await call("publishSubmission", { id: m.id });
+          if (!r.ok) { pb.disabled = false; pb.textContent = "📢 פרסום כמבזק"; alert("לא פורסם: " + r.reason); return; }
+          alert("פורסם: " + r.title); renderMessages(panel);
+        } catch (err) { pb.disabled = false; pb.textContent = "📢 פרסום כמבזק"; alert(err.message); }
+      };
       el.querySelector('[data-a="done"]').onclick = async () => { await call("messageDone", { id: m.id, done: !m.done }); renderMessages(panel); };
       const rb = el.querySelector('[data-a="reply"]');
       if (rb) rb.onclick = () => {

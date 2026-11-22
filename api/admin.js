@@ -360,6 +360,27 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      case "publishSubmission": {
+        const { data: m, error } = await db().from("messages").select("*").eq("id", body.id).maybeSingle();
+        if (error) throw error;
+        const at = (m && m.body || "").lastIndexOf("@@media ");
+        if (!m || at < 0) return res.status(404).json({ error: "לא נמצא קובץ בפנייה" });
+        const meta = JSON.parse(m.body.slice(at + 8));
+        const text = m.body.slice(0, at).trim();
+        const art = await writeArticle({ text, sourceName: meta.credit });
+        if (!art.relevant) return res.status(200).json({ ok: false, reason: art.reject_reason || "העורך האוטומטי פסל את הידיעה" });
+        const { error: e2 } = await db().from("articles").insert({
+          slug: makeSlug(), status: "published", published_at: new Date().toISOString(),
+          title: art.title, summary: art.summary, body: art.body || null, impact: art.impact || null,
+          category: art.category, city: art.city || null, is_breaking: false, score: art.score,
+          source_name: meta.credit, image_url: meta.image || null, video_url: meta.video || null, video_sound: Boolean(meta.video),
+          image_credit: `${meta.video ? "תיעוד" : "צילום"}: ${meta.credit}`,
+        });
+        if (e2) throw e2;
+        await db().from("messages").update({ done: true }).eq("id", m.id);
+        return res.status(200).json({ ok: true, title: art.title });
+      }
+
       case "stateGet": {
         return res.status(200).json({ state: await getState() });
       }

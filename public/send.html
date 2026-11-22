@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>שלחו לנו תמונה או סרטון | נייעס סטטוס</title>
+  <meta name="description" content="דוברים, ארגונים וקוראים: שלחו לנייעס סטטוס תמונות וסרטונים מאירועים לפרסום, עם קרדיט.">
+  <meta name="theme-color" content="#0b141a">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/prefs.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="set-top">
+      <a href="/" id="back" aria-label="חזרה"></a>
+      <h1>שלחו לנו</h1>
+    </header>
+    <main class="send-page">
+      <p class="send-intro">דוברים, ארגונים וקוראים: יש לכם תמונה או סרטון מאירוע? שלחו לנו, ואם זה מתאים, זה יעלה כסטטוס עם קרדיט לשמכם.</p>
+      <div id="send-login" hidden></div>
+      <form id="send-form" hidden>
+        <label class="send-file" id="file-box">
+          <input type="file" id="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" required>
+          <span id="file-label">בחירת תמונה או סרטון (סרטון עד 3 דקות ו-30MB)</span>
+        </label>
+        <div id="preview"></div>
+        <label>מה רואים? מי, מה, איפה ומתי</label>
+        <textarea id="text" maxlength="3000" required placeholder="למשל: מעמד הכנסת ספר תורה בישיבת... בבני ברק, הערב, בהשתתפות..."></textarea>
+        <label>קרדיט (בשם מי לפרסם)</label>
+        <input id="credit" maxlength="80" required placeholder="למשל: דוברות ישיבת... / צילום: ישראל ישראלי">
+        <label>טלפון לבירורים (לא יפורסם, לא חובה)</label>
+        <input id="phone" maxlength="30" inputmode="tel" dir="ltr">
+        <label class="send-consent"><input type="checkbox" id="consent" required>
+          <span>אני הצלם או מורשה מטעמו, ומאשר לנייעס סטטוס לפרסם את הקובץ עם הקרדיט שכתבתי.</span></label>
+        <button class="btn" type="submit" id="submit">שליחה</button>
+        <p class="form-msg" id="msg"></p>
+        <p class="send-note">כל קובץ נבדק לפני שהוא מגיע למערכת. נפרסם רק מה שמתאים לרוח האתר.</p>
+      </form>
+    </main>
+  </div>
+  <script src="/common.js"></script>
+  <script src="/user.js"></script>
+  <script src="/send.js"></script>
+</body>
+</html>

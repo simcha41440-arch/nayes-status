@@ -1,6 +1,15 @@
 import { db } from "./_lib/db.js";
 import { issueUserSession, checkUserSession } from "./_lib/auth.js";
 import { mailOwner } from "./_lib/mailer.js";
+import { decodeDataUrl, checkAndStore, checkVideoFrames, createVideoUpload, isStoredName } from "./_lib/media.js";
+import { signApproval, checkApproval } from "./_lib/auth.js";
+
+const MAX_SUBMISSIONS_PER_DAY = 6;
+async function submissionsToday(uid) {
+  const since = new Date(Date.now() - 86400000).toISOString();
+  const { count } = await db().from("messages").select("id", { count: "exact", head: true }).eq("user_id", uid).eq("topic", "media").gte("created_at", since);
+  return count || 0;
+}
 
 // משתמשים: התחברות עם Google, כניסות, פעמון הודעות, והודעות למנהל.
 // GET  /api/me?config=1                 → { supabaseUrl, requireLogin }
@@ -103,6 +112,47 @@ export default async function handler(req, res) {
           text: `${TOPICS[topic]} מאת ${u.name} (${u.email}):\n\n${text}\n\n(אפשר לענות מלוח הבקרה, בלשונית "פניות")`,
         }).catch(() => {});
         return res.status(200).json({ ok: true });
+      }
+
+      // ---------- "שלחו לנו": תמונה או סרטון מדוברות או מקורא ----------
+      case "submitVideoCheck": {
+        const u = await currentUser(req);
+        if (!u) return res.status(401).json({ error: "צריך להתחבר" });
+        if ((await submissionsToday(u.id)) >= MAX_SUBMISSIONS_PER_DAY) return res.status(429).json({ error: "הגעתם למספר השליחות המרבי להיום" });
+        const frames = (body.frames || []).slice(0, 16);
+        const check = await checkVideoFrames(frames);
+        if (!check.approved) return res.status(200).json({ approved: false, reason: check.reason });
+        const up = await createVideoUpload(String(body.type || ""));
+        return res.status(200).json({ approved: true, name: up.name, uploadUrl: up.uploadUrl, poster: check.posterUrl, approval: signApproval(`${up.name}|${check.posterUrl}`) });
+      }
+
+      case "submitMedia": {
+        const u = await currentUser(req);
+        if (!u) return res.status(401).json({ error: "צריך להתחבר" });
+        if (!body.consent) return res.status(400).json({ error: "צריך לאשר את הרשות לפרסם" });
+        const text = String(body.text || "").trim().slice(0, 3000);
+        const credit = String(body.credit || "").trim().slice(0, 80);
+        if (text.length < 10) return res.status(400).json({ error: "כתבו כמה מילים על מה רואים (מה, איפה, מתי)" });
+        if (!credit) return res.status(400).json({ error: "כתבו בשם מי לתת קרדיט (למשל: דוברות ישיבת...)" });
+        if ((await submissionsToday(u.id)) >= MAX_SUBMISSIONS_PER_DAY) return res.status(429).json({ error: "הגעתם למספר השליחות המרבי להיום" });
+        let media;
+        if (body.kind === "image") {
+          const stored = await checkAndStore(decodeDataUrl(body.dataUrl));
+          if (!stored.approved) return res.status(200).json({ approved: false, reason: stored.reason });
+          media = { image: stored.url };
+        } else if (body.kind === "video") {
+          const name = String(body.name || ""), poster = String(body.poster || "");
+          if (!isStoredName(name) || !checkApproval(`${name}|${poster}`, body.approval)) return res.status(403).json({ error: "הסרטון לא אושר בבדיקה" });
+          media = { video: `/media/${name}`, image: poster };
+        } else return res.status(400).json({ error: "חסר קובץ" });
+        const meta = { ...media, credit, phone: String(body.phone || "").slice(0, 30) };
+        const { error } = await db().from("messages").insert({
+          topic: "media", name: u.name || u.email, email: u.email, user_id: u.id, phone: meta.phone || null,
+          body: `${text}\n\n@@media ${JSON.stringify(meta)}`,
+        });
+        if (error) throw error;
+        mailOwner({ replyTo: u.email, subject: `נייעס סטטוס: ${media.video ? "סרטון" : "תמונה"} חדש מ${credit}`, text: `${text}\n\nקרדיט: ${credit}\nנשלח על ידי ${u.name} (${u.email})\n\nלפרסום: לוח הבקרה, לשונית "פניות".` }).catch(() => {});
+        return res.status(200).json({ approved: true });
       }
 
       default:
