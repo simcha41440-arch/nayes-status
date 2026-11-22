@@ -187,5 +187,149 @@
   },
   {
     "channel": "IMS_weather"
+  },
+  {
+    "channel": "abualiexpress"
+  },
+  {
+    "channel": "amitsegal"
+  },
+  {
+    "channel": "hamal_news"
+  },
+  {
+    "channel": "hamal_il"
+  },
+  {
+    "channel": "newsil"
+  },
+  {
+    "channel": "israelnow"
+  },
+  {
+    "channel": "realtimenewsisrael"
+  },
+  {
+    "channel": "news_kodkod"
+  },
+  {
+    "channel": "kodkodnews"
+  },
+  {
+    "channel": "ynetalerts"
+  },
+  {
+    "channel": "ynet_news"
+  },
+  {
+    "channel": "channel14news"
+  },
+  {
+    "channel": "now14"
+  },
+  {
+    "channel": "now_14"
+  },
+  {
+    "channel": "kann_news"
+  },
+  {
+    "channel": "kannnews"
+  },
+  {
+    "channel": "N12news"
+  },
+  {
+    "channel": "n12news"
+  },
+  {
+    "channel": "mako_news"
+  },
+  {
+    "channel": "walla_news"
+  },
+  {
+    "channel": "maariv_news"
+  },
+  {
+    "channel": "israelhayom"
+  },
+  {
+    "channel": "haredi_news"
+  },
+  {
+    "channel": "chareidim"
+  },
+  {
+    "channel": "chadashot_haredim"
+  },
+  {
+    "channel": "hagizra"
+  },
+  {
+    "channel": "gizra_news"
+  },
+  {
+    "channel": "hagizra_news"
+  },
+  {
+    "channel": "beinharim"
+  },
+  {
+    "channel": "mivzakim"
+  },
+  {
+    "channel": "mivzakim_il"
+  },
+  {
+    "channel": "mivzak_news"
+  },
+  {
+    "channel": "breakingnews_il"
+  },
+  {
+    "channel": "newsisrael"
+  },
+  {
+    "channel": "israel_news"
+  },
+  {
+    "channel": "hadshot_bazman"
+  },
+  {
+    "channel": "hadashot_bezman_emet"
+  },
+  {
+    "channel": "rotternews"
+  },
+  {
+    "channel": "yediot"
+  },
+  {
+    "channel": "calcalist"
+  },
+  {
+    "channel": "globes_news"
+  },
+  {
+    "channel": "bizportal"
+  },
+  {
+    "channel": "themarker"
+  },
+  {
+    "channel": "jdn_breaking"
+  },
+  {
+    "channel": "kikar_hashabat"
+  },
+  {
+    "channel": "hm_news_il"
+  },
+  {
+    "channel": "emess"
+  },
+  {
+    "channel": "shaharhaim"
   }
 ]
