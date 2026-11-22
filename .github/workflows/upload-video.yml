@@ -1,0 +1,31 @@
+name: העלאת סרטון
+on:
+  workflow_dispatch:
+    inputs:
+      file: { description: "שם הקובץ בענף upload-tmp", required: true }
+      title: { required: true }
+      summary: { required: true }
+      body: { required: false, default: "" }
+      category: { required: false, default: "general" }
+      credit: { required: false, default: "" }
+jobs:
+  upload:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: upload-tmp, path: incoming }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: sudo apt-get install -y -qq ffmpeg > /dev/null
+      - run: npm install --omit=dev
+      - run: node scripts/upload-video.mjs "incoming/${{ inputs.file }}"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          POST_TITLE: ${{ inputs.title }}
+          POST_SUMMARY: ${{ inputs.summary }}
+          POST_BODY: ${{ inputs.body }}
+          POST_CATEGORY: ${{ inputs.category }}
+          POST_CREDIT: ${{ inputs.credit }}
