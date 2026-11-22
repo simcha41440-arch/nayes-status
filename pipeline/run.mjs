@@ -535,10 +535,13 @@ async function main() {
       }
     }
 
-    // אין תמונה: תמונה אמיתית מוויקישיתוף. קודם של האדם המרכזי (תמונת לע"מ אם יש), אחרת של המקום.
-    if (!imageUrl && !videoUrl && art.person_query) {
-      try { const im = await personImage(art.person_query); if (im) { imageUrl = im.url; credit = im.credit; } }
-      catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
+    // אין תמונה: תמונת ארכיון אמיתית מוויקישיתוף, רק לנושא כללי (למשל חברי הכנסת החרדים בידיעה על חוק הגיוס) או למקום.
+    if (!imageUrl && !videoUrl && art.topic_query) {
+      try {
+        const key = art.topic_query.split(/\s+/).sort((x, y) => y.length - x.length)[0];
+        const im = await commonsImage(art.topic_query, [key]);
+        if (im) { imageUrl = im.url; credit = im.credit; }
+      } catch (err) { console.log(`  ויקישיתוף (נושא): ${err.message}`); }
     }
     if (!imageUrl && !videoUrl && art.place_query) {
       try {
