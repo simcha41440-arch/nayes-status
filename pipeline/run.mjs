@@ -271,6 +271,41 @@ async function notifyTelegram(text) {
   }
 }
 
+// ---------- ויקישיתוף: תמונות אמיתיות ברישיון חופשי (כולל תמונות לע"מ) ----------
+const WM_UA = { "User-Agent": "NayesStatusBot/1.0 (https://www.nayesstatus.com)" };
+const stripTags = (h = "") => String(h).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+async function commonsImage(search, mustWords = []) {
+  const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=10`
+    + `&gsrsearch=${encodeURIComponent(search + " filetype:bitmap")}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=1080`;
+  const r = await fetch(api, { headers: WM_UA });
+  if (!r.ok) throw new Error(`Commons ${r.status}`);
+  const pages = Object.values((await r.json()).query?.pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
+  for (const p of pages) {
+    const info = p.imageinfo?.[0];
+    if (!info || !/image\/(jpeg|png)/.test(info.mime || "")) continue;
+    const meta = info.extmetadata || {};
+    const license = stripTags(meta.LicenseShortName?.value || "");
+    if (!/^(CC BY|CC0|Public domain|PD)/i.test(license) || /NC|ND/.test(license)) continue; // רק רישיון שמתיר שימוש
+    const text = `${p.title} ${stripTags(meta.ImageDescription?.value || "")} ${stripTags(meta.ObjectName?.value || "")}`.toLowerCase();
+    if (mustWords.some((w) => !text.includes(w.toLowerCase()))) continue; // לוודא שזה באמת האדם/המקום
+    const imgRes = await fetch(info.thumburl || info.url, { headers: WM_UA });
+    if (!imgRes.ok) continue;
+    const type = (imgRes.headers.get("content-type") || "image/jpeg").split(";")[0];
+    const stored = await checkAndStore({ buffer: Buffer.from(await imgRes.arrayBuffer()), type });
+    if (!stored.approved) continue;
+    const gpo = /government press office|\bgpo\b/i.test(text);
+    const artist = stripTags(meta.Artist?.value || "").slice(0, 60);
+    return { url: stored.url, credit: gpo ? `צילום: לע"מ (${license})` : `צילום: ${artist || "ויקישיתוף"} / ויקישיתוף (${license})` };
+  }
+  return null;
+}
+
+async function personImage(name) {
+  const last = name.trim().split(/\s+/).pop();
+  return (await commonsImage(`"${name}" "Government Press Office"`, [last])) || (await commonsImage(`"${name}"`, [last]));
+}
+
 // ---------- שערי העיתונים של הבוקר (רק מה שעובר את בדיקת הצניעות) ----------
 const FRONT_PAGES = []; // ידיעות אחרונות הוסר לבקשת בעל האתר. העיתונים החרדיים יתווספו כשיימצא מקור אוטומטי.
 
@@ -486,6 +521,19 @@ async function main() {
           if (im) { imageUrl = im.url; credit = credit || im.credit; }
         } catch (err) { console.log(`  Pexels תמונה: ${err.message}`); }
       }
+    }
+
+    // אין תמונה: תמונה אמיתית מוויקישיתוף. קודם של האדם המרכזי (תמונת לע"מ אם יש), אחרת של המקום.
+    if (!imageUrl && !videoUrl && art.person_query) {
+      try { const im = await personImage(art.person_query); if (im) { imageUrl = im.url; credit = im.credit; } }
+      catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
+    }
+    if (!imageUrl && !videoUrl && art.place_query) {
+      try {
+        const words = art.place_query.split(/\s+/).filter((w) => w.length > 3 && !/^(israel|building|city)$/i.test(w)).slice(0, 1);
+        const im = await commonsImage(art.place_query, words);
+        if (im) { imageUrl = im.url; credit = im.credit; }
+      } catch (err) { console.log(`  ויקישיתוף (מקום): ${err.message}`); }
     }
 
     // פרסום אוטומטי, חוץ ממקרים רציניים שהעורך סימן לבדיקה של אדם

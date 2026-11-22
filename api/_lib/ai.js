@@ -102,7 +102,13 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
 - image_query: רק בידיעות כלכלה וצרכנות (economy, consumer): 2-4 מילים באנגלית לתמונת אילוסטרציה של חפץ או סמל
   (למשל "shekel coins", "supermarket shelves", "car dashboard", "electricity meter"). בלי אנשים ובלי פרצופים.
   בכל ידיעה אחרת, ובמיוחד ידיעה על אדם מסוים (פוליטיקאי, רב, אדמו"ר), פוליטיקה, קהילה, עולם התורה, ביטחון, אסון או פטירה:
-  מחרוזת ריקה. לא כל מבזק צריך תמונה, ומבזק בלי תמונה מוצג כסטטוס טקסט יפה.`;
+  מחרוזת ריקה. לא כל מבזק צריך תמונה, ומבזק בלי תמונה מוצג כסטטוס טקסט יפה.
+- person_query: אם הידיעה עוסקת בעיקר באיש ציבור מוכר אחד (גבר בלבד): פוליטיקאי, רב, אדמו"ר, ראש ישיבה, נשיא או שר.
+  כתוב את שמו המלא באנגלית כפי שהוא מופיע בוויקיפדיה (למשל "Benjamin Netanyahu", "Aryeh Deri", "Moshe Gafni").
+  זה לחיפוש תמונה אמיתית שלו (רשמית, ברישיון חופשי). אם אין אדם אחד מרכזי, באסון או בחשד פלילי: מחרוזת ריקה.
+- place_query: אם הידיעה עוסקת במקום מסוים (עיר, אתר, מבנה, כביש) ואין אדם מרכזי: 2-4 מילים באנגלית לחיפוש
+  תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport").
+  באסון, בפיגוע או בפטירה: מחרוזת ריקה.`;
 
 const ARTICLE_SCHEMA = {
   type: "object",
@@ -120,10 +126,12 @@ const ARTICLE_SCHEMA = {
     ai_notes: { type: "string" },
     needs_review: { type: "boolean" },
     image_query: { type: "string" },
+    person_query: { type: "string" },
+    place_query: { type: "string" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "person_query", "place_query",
   ],
   additionalProperties: false,
 };
