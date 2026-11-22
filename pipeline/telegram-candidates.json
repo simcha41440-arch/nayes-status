@@ -1,26 +1,191 @@
 [
-  { "channel": "idfofficial", "credit": "דובר צה\"ל" },
-  { "channel": "idf_telegram", "credit": "דובר צה\"ל" },
-  { "channel": "IDFSpokesperson", "credit": "דובר צה\"ל" },
-  { "channel": "idfonline", "credit": "דובר צה\"ל" },
-  { "channel": "israelpolice", "credit": "דוברות המשטרה" },
-  { "channel": "IL_Police", "credit": "דוברות המשטרה" },
-  { "channel": "police_il", "credit": "דוברות המשטרה" },
-  { "channel": "mdaisrael", "credit": "דוברות מד\"א" },
-  { "channel": "MDA_Israel", "credit": "דוברות מד\"א" },
-  { "channel": "mda_il", "credit": "דוברות מד\"א" },
-  { "channel": "PikudHaOref_all", "credit": "פיקוד העורף" },
-  { "channel": "pikudhaoref", "credit": "פיקוד העורף" },
-  { "channel": "zakaisrael", "credit": "זק\"א" },
-  { "channel": "zaka_il", "credit": "זק\"א" },
-  { "channel": "unitedhatzalah", "credit": "איחוד הצלה" },
-  { "channel": "ihudhatzala", "credit": "איחוד הצלה" },
-  { "channel": "israelfire", "credit": "כבאות והצלה" },
-  { "channel": "kabaut", "credit": "כבאות והצלה" },
-  { "channel": "IsraelMFA", "credit": "משרד החוץ" },
-  { "channel": "IsraeliPM", "credit": "לשכת ראש הממשלה" },
-  { "channel": "mod_russia", "credit": "משרד ההגנה הרוסי" },
-  { "channel": "mod_russia_en", "credit": "משרד ההגנה הרוסי" },
-  { "channel": "GeneralStaffZSU", "credit": "המטה הכללי של צבא אוקראינה" },
-  { "channel": "ministry_of_defense_ua", "credit": "משרד ההגנה האוקראיני" }
+  {
+    "channel": "idfofficial",
+    "credit": "דובר צה\"ל"
+  },
+  {
+    "channel": "idf_telegram",
+    "credit": "דובר צה\"ל"
+  },
+  {
+    "channel": "IDFSpokesperson",
+    "credit": "דובר צה\"ל"
+  },
+  {
+    "channel": "idfonline",
+    "credit": "דובר צה\"ל"
+  },
+  {
+    "channel": "israelpolice",
+    "credit": "דוברות המשטרה"
+  },
+  {
+    "channel": "IL_Police",
+    "credit": "דוברות המשטרה"
+  },
+  {
+    "channel": "police_il",
+    "credit": "דוברות המשטרה"
+  },
+  {
+    "channel": "mdaisrael",
+    "credit": "דוברות מד\"א"
+  },
+  {
+    "channel": "MDA_Israel",
+    "credit": "דוברות מד\"א"
+  },
+  {
+    "channel": "mda_il",
+    "credit": "דוברות מד\"א"
+  },
+  {
+    "channel": "PikudHaOref_all",
+    "credit": "פיקוד העורף"
+  },
+  {
+    "channel": "pikudhaoref",
+    "credit": "פיקוד העורף"
+  },
+  {
+    "channel": "zakaisrael",
+    "credit": "זק\"א"
+  },
+  {
+    "channel": "zaka_il",
+    "credit": "זק\"א"
+  },
+  {
+    "channel": "unitedhatzalah",
+    "credit": "איחוד הצלה"
+  },
+  {
+    "channel": "ihudhatzala",
+    "credit": "איחוד הצלה"
+  },
+  {
+    "channel": "israelfire",
+    "credit": "כבאות והצלה"
+  },
+  {
+    "channel": "kabaut",
+    "credit": "כבאות והצלה"
+  },
+  {
+    "channel": "IsraelMFA",
+    "credit": "משרד החוץ"
+  },
+  {
+    "channel": "IsraeliPM",
+    "credit": "לשכת ראש הממשלה"
+  },
+  {
+    "channel": "mod_russia",
+    "credit": "משרד ההגנה הרוסי"
+  },
+  {
+    "channel": "mod_russia_en",
+    "credit": "משרד ההגנה הרוסי"
+  },
+  {
+    "channel": "GeneralStaffZSU",
+    "credit": "המטה הכללי של צבא אוקראינה"
+  },
+  {
+    "channel": "ministry_of_defense_ua",
+    "credit": "משרד ההגנה האוקראיני"
+  },
+  {
+    "channel": "GPOIsrael"
+  },
+  {
+    "channel": "IsraelGPO"
+  },
+  {
+    "channel": "gpo_israel"
+  },
+  {
+    "channel": "police_spokesperson"
+  },
+  {
+    "channel": "IsraelPoliceSpokesman"
+  },
+  {
+    "channel": "israel_police_il"
+  },
+  {
+    "channel": "fire_rescue_israel"
+  },
+  {
+    "channel": "UnitedHatzalah"
+  },
+  {
+    "channel": "hatzalah_il"
+  },
+  {
+    "channel": "zaka_official"
+  },
+  {
+    "channel": "ZAKA_IL"
+  },
+  {
+    "channel": "israelrailways"
+  },
+  {
+    "channel": "rakevet_israel"
+  },
+  {
+    "channel": "netivei_israel"
+  },
+  {
+    "channel": "MOHIsrael"
+  },
+  {
+    "channel": "health_gov_il"
+  },
+  {
+    "channel": "kikarhashabat"
+  },
+  {
+    "channel": "kikar_news"
+  },
+  {
+    "channel": "bhol_news"
+  },
+  {
+    "channel": "behadrei_haredim"
+  },
+  {
+    "channel": "jdn_news"
+  },
+  {
+    "channel": "JDNnews"
+  },
+  {
+    "channel": "hamechadesh"
+  },
+  {
+    "channel": "hm_news"
+  },
+  {
+    "channel": "haredim10"
+  },
+  {
+    "channel": "actualic"
+  },
+  {
+    "channel": "emess_news"
+  },
+  {
+    "channel": "hamodia_news"
+  },
+  {
+    "channel": "yated_neeman"
+  },
+  {
+    "channel": "ims_gov_il"
+  },
+  {
+    "channel": "IMS_weather"
+  }
 ]

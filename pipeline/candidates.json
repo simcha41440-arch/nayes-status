@@ -113,5 +113,75 @@
     "name": "שירונט יהודי",
     "url": "https://www.yeshiva.org.il/rss",
     "kind": "music"
+  },
+  {
+    "name": "כיכר השבת rss.xml",
+    "url": "https://www.kikar.co.il/rss.xml",
+    "kind": "test"
+  },
+  {
+    "name": "כיכר השבת feed",
+    "url": "https://www.kikar.co.il/feed",
+    "kind": "test"
+  },
+  {
+    "name": "בחדרי חרדים news",
+    "url": "https://www.bhol.co.il/rss/news.xml",
+    "kind": "test"
+  },
+  {
+    "name": "בחדרי חרדים rss",
+    "url": "https://www.bhol.co.il/rss",
+    "kind": "test"
+  },
+  {
+    "name": "המחדש",
+    "url": "https://www.hm-news.co.il/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "אמס",
+    "url": "https://www.emess.co.il/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "המודיע",
+    "url": "https://www.hamodia.co.il/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "יתד נאמן",
+    "url": "https://www.yated.co.il/feed",
+    "kind": "test"
+  },
+  {
+    "name": "חרדים10 feed",
+    "url": "https://www.haredim10.co.il/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "JDN ראשי",
+    "url": "https://www.jdn.co.il/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "JDN קהילה",
+    "url": "https://www.jdn.co.il/community/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "JDN עולם התורה",
+    "url": "https://www.jdn.co.il/torah/feed/",
+    "kind": "test"
+  },
+  {
+    "name": "לע\"מ גלריה",
+    "url": "https://www.gov.il/he/api/PublicationApi/rss/gpo",
+    "kind": "test"
+  },
+  {
+    "name": "ויקישיתוף תמונות היום",
+    "url": "https://commons.wikimedia.org/w/api.php?action=featuredfeed&feed=potd&feedformat=rss&language=he",
+    "kind": "test"
   }
 ]
