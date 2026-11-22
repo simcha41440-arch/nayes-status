@@ -52,10 +52,10 @@ require("fs").mkdirSync(out, { recursive: true });
   await p.click("#menu-btn"); await shot("27-תפריט");
 
   // עמודים
-  for (const [path, name] of [["/settings", "30-הגדרות"], ["/about", "31-אודות"], ["/admin", "32-כניסת-מנהל"]]) {
+  for (const [path, name] of [["/settings", "30-הגדרות"], ["/about", "31-אודות"], ["/admin", "32-כניסת-מנהל"], ["/send", "33-שלחו-לנו"]]) {
     await p.goto(SITE + path, { waitUntil: "networkidle" });
     await shot(name, { wait: 1200 });
-    if (path !== "/admin") await shot(name + "-מלא", { s: { fullPage: true } });
+    if (path !== "/admin" && path !== "/send") await shot(name + "-מלא", { s: { fullPage: true } });
   }
 
   // מחשב
