@@ -26,7 +26,7 @@ import "../public/zmanim.js"; // מגדיר את globalThis.Zmanim (שבתות �
 
 const run = promisify(execFile);
 
-const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 15);        // כמה ידיעות העורך הראשי כותב בכל ריצה
+const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 8);        // כמה ידיעות העורך הראשי כותב בכל ריצה
 const PREFILTER_BATCH = Number(process.env.PREFILTER_BATCH || 40); // כמה ידיעות נבדקות בסינון הזול בכל ריצה
 // באילו ערוצים מותר לשים תמונת אילוסטרציה ממאגר חופשי (כשאין תמונה רשמית מהמקור)
 const STOCK_CATEGORIES = new Set((process.env.STOCK_CATEGORIES || "economy,consumer").split(",").map((s) => s.trim()));
@@ -315,8 +315,14 @@ async function main() {
   const fresh = await filterNew(await collectItems(sources));
   const candidates = fresh.slice(0, PREFILTER_BATCH);
 
-  // שלב 1: סינון זול של כל המועמדות בבת אחת
-  const verdicts = await prefilter(candidates.map((c) => ({ source: c.source.name, text: c.text })));
+  // כותרות שכבר פורסמו, כדי שהעורך לא יפרסם את אותו אירוע פעמיים
+  const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+  const { data: recentRows } = await db().from("articles").select("title").eq("status", "published")
+    .gte("published_at", since12).order("published_at", { ascending: false }).limit(60);
+  const recentTitles = (recentRows || []).map((r) => r.title);
+
+  // שלב 1: סינון זול של כל המועמדות בבת אחת (כולל כפילויות וידיעות שוליות בבירור)
+  const verdicts = await prefilter(candidates.map((c) => ({ source: c.source.name, text: c.text })), recentTitles);
   const batch = [];
   for (let i = 0; i < candidates.length; i++) {
     if (verdicts[i].pass) { if (batch.length < MAX_PER_RUN) batch.push(candidates[i]); continue; }
@@ -329,11 +335,6 @@ async function main() {
   }
   console.log(`נמצאו ${fresh.length} ידיעות חדשות. ${candidates.length} נבדקו בסינון הזול, ${batch.length} עוברות לעורך הראשי.`);
 
-  // כותרות שכבר פורסמו, כדי שהעורך לא יפרסם את אותו אירוע פעמיים
-  const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
-  const { data: recentRows } = await db().from("articles").select("title").eq("status", "published")
-    .gte("published_at", since12).order("published_at", { ascending: false }).limit(60);
-  const recentTitles = (recentRows || []).map((r) => r.title);
 
   let accepted = 0;
   let rejected = 0;

@@ -166,14 +166,18 @@ async function askJson({ system, content, schema, maxTokens = 8000 }) {
  */
 export async function writeArticle(raw) {
   const recent = (raw.recentTitles || []).slice(0, 60);
-  const content =
-    (recent.length ? `מבזקים שכבר פורסמו (ב-12 השעות האחרונות):\n${recent.map((t) => `- ${t}`).join("\n")}\n\n` : "") +
+  // רשימת המבזקים שכבר פורסמו זהה בכל הידיעות של אותה ריצה: נשמרת במטמון (זול פי 10)
+  const recentBlock = recent.length ? `מבזקים שכבר פורסמו (ב-12 השעות האחרונות):\n${recent.map((t) => `- ${t}`).join("\n")}` : "";
+  const itemText =
     `מקור: ${raw.sourceName || "לא צוין"}\n` +
     (raw.lowTrust ? "סוג המקור: ערוץ מבזקים לא רשמי\n" : "") +
     (raw.ageHours != null ? `פורסם במקור: לפני ${raw.ageHours < 1 ? "פחות משעה" : `${Math.round(raw.ageHours)} שעות`}\n` : "") +
     (raw.sourceUrl ? `קישור: ${raw.sourceUrl}\n` : "") +
     `\n--- חומר הגלם ---\n${raw.text}\n--- סוף ---`;
 
+  const content = recentBlock
+    ? [{ type: "text", text: recentBlock, cache_control: { type: "ephemeral" } }, { type: "text", text: itemText }]
+    : itemText;
   const result = await askJson({ system: EDITOR_SYSTEM, content, schema: ARTICLE_SCHEMA });
   if (result.refused) {
     return { relevant: false, reject_reason: "ה-AI סירב לעבד את החומר" };
@@ -237,6 +241,9 @@ const PREFILTER_SYSTEM = `אתה מסנן ראשוני לערוץ מבזקים �
 פסול רק כשברור לגמרי שהידיעה לא מתאימה: ספורט, רכילות וידוענים, זמרים ותרבות פנאי, טלוויזיה וסרטים,
 הורוסקופ ואמונות טפלות, אופנה ויופי, מוזיקה חילונית וזמרות (מוזיקה יהודית-חרדית חדשה של זמרים: pass=true), פרסומות ותוכן שיווקי, הודעות ריקות (ברכות, "לילה טוב"),
 מתכונים וטיפים כלליים, תוכן לא צנוע, או דתות אחרות.
+פסול גם: ידיעה שהיא בבירור אותו אירוע כמו אחד מ"המבזקים שכבר פורסמו" (reason: "כפילות"),
+או ידיעה שולית בבירור: פלילים מקומיים שגרתיים בלי השלכה רחבה, תעמולה של צבא זר, חדשות חוץ קטנות, הצהרה פוליטית בלי עובדה חדשה.
+חדשות הקהילה החרדית ועולם התורה: תמיד pass=true (אלא אם כפילות).
 חדשות אמיתיות, פוליטיקה, ביטחון, כלכלה, עולם, ובוודאי חדשות הקהילה החרדית ועולם התורה: pass=true.
 בכל ספק: pass=true.`;
 
@@ -258,9 +265,10 @@ const PREFILTER_SCHEMA = {
 };
 
 /** @param {{source: string, text: string}[]} items  @returns {Promise<{pass: boolean, reason: string}[]>} */
-export async function prefilter(items) {
+export async function prefilter(items, recentTitles = []) {
   if (!items.length) return [];
-  const list = items.map((it, i) => `[${i}] (${it.source}) ${String(it.text).slice(0, 600).replace(/\s+/g, " ")}`).join("\n\n");
+  const recent = recentTitles.length ? `המבזקים שכבר פורסמו:\n${recentTitles.slice(0, 60).map((t) => `- ${t}`).join("\n")}\n\nהידיעות לבדיקה:\n` : "";
+  const list = recent + items.map((it, i) => `[${i}] (${it.source}) ${String(it.text).slice(0, 600).replace(/\s+/g, " ")}`).join("\n\n");
   try {
     const response = await ai().messages.create({
       model: PREFILTER_MODEL(),
