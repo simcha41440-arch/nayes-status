@@ -285,6 +285,7 @@ async function commonsImage(search, mustWords = []) {
   for (const p of pages) {
     const info = p.imageinfo?.[0];
     if (!info || !/image\/(jpeg|png)/.test(info.mime || "")) continue;
+    if (info.thumbwidth && info.thumbheight && (info.thumbwidth / info.thumbheight > 2 || info.thumbheight / info.thumbwidth > 2)) continue; // בלי פנורמות צרות
     const meta = info.extmetadata || {};
     const license = stripTags(meta.LicenseShortName?.value || "");
     if (!/^(CC BY|CC0|Public domain|PD)/i.test(license) || /NC|ND/.test(license)) continue; // רק רישיון שמתיר שימוש
@@ -306,7 +307,7 @@ async function commonsImage(search, mustWords = []) {
 // אדם אחד או שניים ("A | B"). קודם מחפשים תמונה של שניהם יחד; אם אין, תמונה של החשוב מביניהם.
 // תמונת גיבוי לכל ערוץ, כדי שלא יהיה מבזק בלי תמונה
 const CATEGORY_PHOTO = {
-  general: "Jerusalem Old City panorama", politics: "Knesset building", community: "Bnei Brak street",
+  general: "Jerusalem Old City walls", politics: "Knesset building", community: "Bnei Brak street",
   torah: "Talmud books", economy: "Israeli shekel coins", consumer: "supermarket shelves", local: "Jerusalem city view",
   health: "hospital Israel building", world: "world map globe", tech: "smartphone technology", weather: "clouds sky Israel",
   music: "violin musical instrument",
