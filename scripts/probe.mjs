@@ -16,6 +16,9 @@ for (const u of urls) {
     if (lists.length) console.log(`*** PLAYLISTS ${u}: ${lists.slice(0, 10).join(" ")}`);
     const titles = [...html.matchAll(/"title":\{"runs":\[\{"text":"([^"]{3,90})"/g)].map((m) => m[1]).slice(0, 12);
     if (titles.length) console.log(`*** TITLES: ${titles.join(" | ")}`);
+    // זוגות מזהה סרטון + כותרת (תוצאות חיפוש ורשימות השמעה)
+    const pairs = [...html.matchAll(/"videoId":"([\w-]{11})"[\s\S]{0,1500}?"title":\{"runs":\[\{"text":"([^"]+)"/g)].map((m) => `${m[1]} = ${m[2]}`);
+    if (pairs.length) console.log(`*** VIDEOS:\n${[...new Set(pairs)].slice(0, 40).join("\n")}`);
     console.log(`\n=== ${r.status} ${u}\n  title: ${title.trim().slice(0, 100)}\n  og: ${og}\n  ${imgs.join("\n  ")}`);
   } catch (e) { console.log(`\n=== FAIL ${u} ${e.message}`); }
 }
