@@ -51,7 +51,7 @@ if (targetSlug) { // עדכון מבזק קיים
 }
 const slug = makeSlug();
 const { error } = await db().from("articles").insert({
-  slug, status: "published", published_at: new Date().toISOString(),
+  slug, status: "published", published_at: new Date(Date.now() - 3 * 60000).toISOString(),
   title: POST_TITLE.slice(0, 120), summary: POST_SUMMARY.slice(0, 600), body: POST_BODY || null,
   category: POST_CATEGORY || "general", source_name: POST_SOURCE || "מערכת נייעס סטטוס", score: 7, ...media,
 });
