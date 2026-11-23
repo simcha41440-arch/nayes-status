@@ -54,9 +54,14 @@
     const city = getPrefs().city || "ירושלים";
     const usd = rates.find((r) => r.code === "USD"), eur = rates.find((r) => r.code === "EUR");
     const arrow = (c) => (c > 0 ? "▲" : c < 0 ? "▼" : "•");
-    box.innerHTML = row("zmanim", "zmanim", `זמני היום · ${city}`, nextZman(), "")
-      + row("rates", "economy", "שער הדולר והמטבעות", usd ? `דולר ${usd.rate.toFixed(3)} ${arrow(usd.change)}${Math.abs(usd.change).toFixed(2)}%${eur ? ` · אירו ${eur.rate.toFixed(3)}` : ""}` : "השער היציג של בנק ישראל", usd ? clock(usd.updated) : "")
-      + row("oref", "oref", "פיקוד העורף", o ? o.text.replace(/\s+/g, " ").slice(0, 90) : "הנחיות וטלפונים לשעת חירום", o ? timeAgo(o.date) : "");
+    const rows = {
+      zmanim: () => row("zmanim", "zmanim", `זמני היום · ${city}`, nextZman(), ""),
+      rates: () => row("rates", "economy", "שער הדולר והמטבעות", usd ? `דולר ${usd.rate.toFixed(3)} ${arrow(usd.change)}${Math.abs(usd.change).toFixed(2)}%${eur ? ` · אירו ${eur.rate.toFixed(3)}` : ""}` : "השער היציג של בנק ישראל", usd ? clock(usd.updated) : ""),
+      oref: () => row("oref", "oref", "פיקוד העורף", o ? o.text.replace(/\s+/g, " ").slice(0, 90) : "הנחיות וטלפונים לשעת חירום", o ? timeAgo(o.date) : ""),
+    };
+    // רק הכלים שהקורא נעץ, בסדר שבחר
+    const pinned = getPrefs().pinned || [];
+    box.innerHTML = byUserOrder(Object.keys(rows).filter((k) => pinned.includes(k)), (k) => k).map((k) => rows[k]()).join("");
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
 
@@ -70,7 +75,11 @@
       <span class="d-ic" style="background:${CHANNEL_COLORS[ic] || CHANNEL_COLORS.general}">${icon(ic, 30, 1.6)}</span>
       <b>${esc(name)}</b><small>${esc(sub)}</small>
       <button class="follow" data-tool="${key}">${esc(btn)}</button></div>`;
+    const pinnedNow = getPrefs().pinned || [];
+    const toolCards = [["zmanim", "zmanim", "זמני היום", "לפי העיר שלך"], ["rates", "economy", "שער הדולר", "מטבעות וקריפטו"], ["oref", "oref", "פיקוד העורף", "הנחיות וחירום"]]
+      .filter(([k]) => !pinnedNow.includes(k)).map(([k, ic, n, sub]) => card(k, ic, n, sub, "פתיחה"));
     box.innerHTML = [
+      ...toolCards,
       card("city", "city", city, "מבזקים מהעיר", "פתיחה"),
       card("consumer", "consumer", "צרכנות", "ריקולים ומחירים", "פתיחה"),
       lastYear.length ? card("memory", "memory", "היום לפני שנה", `${lastYear.length} מבזקים`, "צפייה") : "",
@@ -79,20 +88,36 @@
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
 
-  // ---------- שערי מטבע (השער היציג של בנק ישראל) ----------
-  let rates = [];
+  // ---------- שערי מטבע: שוק חי (כל דקה), יציג של בנק ישראל, זהב ונפט, ומטבעות דיגיטליים ----------
+  let rates = [], commodities = [], crypto = [];
   async function loadRates() {
-    try { const r = await fetch("/api/rates"); if (r.ok) { rates = (await r.json()).rates || []; renderPinned(); } } catch {}
+    try {
+      const r = await fetch("/api/rates");
+      if (!r.ok) return;
+      const d = await r.json();
+      rates = d.rates || []; commodities = d.commodities || []; crypto = d.crypto || [];
+      renderPinned();
+      const sh = $("tool-sheet");
+      if (sh && sh.dataset.kind === "rates" && sh.classList.contains("open")) openRates(true);
+    } catch {}
   }
-  function openRates() {
-    const upd = rates[0] ? new Date(rates[0].updated) : null;
-    sheet("שער הדולר והמטבעות", rates.length ? `
-      <div class="rates">${rates.map((r) => `<div class="rate-row">
-        <span class="rf">${r.flag}</span><span class="rn"><b>${esc(r.name)}</b><small>${r.unit > 1 ? `${r.unit} ${r.code}` : r.code}</small></span>
-        <span class="rv"><b>₪${r.rate.toFixed(r.rate < 1 ? 4 : 3)}</b><small class="${r.change > 0 ? "up" : r.change < 0 ? "down" : ""}">${r.change > 0 ? "▲" : r.change < 0 ? "▼" : "•"} ${Math.abs(r.change).toFixed(2)}%</small></span></div>`).join("")}</div>
-      <p class="zm-note">השער היציג של בנק ישראל${upd ? `, עודכן ${upd.toLocaleDateString("he-IL")} בשעה ${clock(rates[0].updated)}` : ""}. השער מתעדכן פעם ביום עסקים. השינוי הוא לעומת השער הקודם.
-      בבנק ובצ'יינג' השער בפועל יכול להיות שונה מעט.</p>`
-      : `<div class="empty">לא הצלחנו לקבל את השערים כרגע. נסו שוב בעוד דקה.</div>`);
+  const fmtN = (n) => (n >= 1000 ? n.toLocaleString("he-IL", { maximumFractionDigits: 0 }) : n.toFixed(n < 1 ? 4 : n < 100 ? 3 : 2));
+  const chg = (c) => `<small class="${c > 0 ? "up" : c < 0 ? "down" : ""}">${c > 0 ? "▲" : c < 0 ? "▼" : "•"} ${Math.abs(c || 0).toFixed(2)}%</small>`;
+  function openRates(refresh) {
+    const row = (flag, name, sub, val, c) => `<div class="rate-row"><span class="rf">${flag}</span><span class="rn"><b>${esc(name)}</b><small>${sub}</small></span>
+      <span class="rv"><b>₪${fmtN(val)}</b>${chg(c)}</span></div>`;
+    const html = rates.length ? `
+      <div class="live-note"><i></i> מתעדכן כל דקה · ${esc(clock(new Date().toISOString()))}</div>
+      <h3 class="sheet-h">מטבעות</h3>
+      <div class="rates">${rates.map((r) => row(r.flag, r.name, `${r.unit > 1 ? r.unit + " " : ""}${r.code}${r.official ? ` · יציג ${fmtN(r.official)}` : ""}`, r.rate, r.change)).join("")}</div>
+      ${commodities.length ? `<h3 class="sheet-h">זהב, כסף ונפט</h3><div class="rates">${commodities.map((c) => row(c.flag, c.name, `$${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
+      ${crypto.length ? `<h3 class="sheet-h">מטבעות דיגיטליים</h3><div class="rates">${crypto.map((c) => row("🪙", c.name, `${c.code} · $${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
+      <p class="zm-note">שערי השוק מתעדכנים כל דקה. "יציג" הוא השער היציג הרשמי של בנק ישראל, שמתפרסם פעם ביום עסקים.
+      במטבעות דיגיטליים: השינוי ב-24 השעות האחרונות. בבנק ובצ'יינג' השער בפועל יכול להיות שונה מעט.</p>`
+      : `<div class="empty">לא הצלחנו לקבל את השערים כרגע. נסו שוב בעוד דקה.</div>`;
+    if (refresh) { const body = $("tool-sheet").querySelector(".sheet-body"); if (body) body.innerHTML = html; return; }
+    const s = sheet("שער הדולר והמטבעות", html);
+    s.dataset.kind = "rates";
   }
 
   const TOOLS = {
@@ -136,6 +161,7 @@
     s.innerHTML = `<div class="search-bar"><button class="menu-btn" id="sheet-back" aria-label="חזרה">${icon("back", 24)}</button>
       <h2 style="margin:0;font-size:20px;font-weight:600;flex:1">${esc(title)}</h2></div><div class="sheet-body">${html}</div>`;
     s.classList.add("open");
+    s.dataset.kind = "";
     $("sheet-back").onclick = () => s.classList.remove("open");
     return s;
   }
@@ -277,7 +303,7 @@
   renderAlerts();
   loadState();
   loadRates();
-  setInterval(() => { if (!document.hidden) loadRates(); }, 5 * 60 * 1000);
+  setInterval(() => { if (!document.hidden) loadRates(); }, 60 * 1000);
   api({ onthisday: 1 }).then((r) => { if (DEMO_MODE) return; lastYear = (r && r.articles) || []; if (lastYear.length) renderTools(); }).catch(() => {});
   setInterval(() => { if (!document.hidden) loadState(); }, 60000);
   window.nayesTools = { openZmanim, openOref, chooseCity, shareSite };

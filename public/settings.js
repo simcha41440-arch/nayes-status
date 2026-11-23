@@ -48,6 +48,7 @@
       ${row({ id: "speed", ic: "speed", title: "מהירות מעבר בין סטטוסים", sub: SPEEDS[p.speed] })}
 
       <div class="set-sec">ערוצים</div>
+      ${row({ id: "arrange", ic: "pin", title: "סידור ערוצים ונעיצה", sub: "לבחור מה למעלה, מה נעוץ ובאיזה סדר" })}
       ${row({ id: "muted", ic: "bellOff", title: "ערוצים מושתקים", sub: muted.length ? muted.join(", ") : "אין ערוצים מושתקים" })}
 
       <div class="set-sec">היסטוריית צפייה</div>
@@ -75,6 +76,7 @@
     $("theme").onclick = () => choose("ערכת נושא", THEMES, getPrefs().theme, (v) => { setPref("theme", v); render(); });
     $("font").onclick = () => choose("גודל טקסט", FONTS, getPrefs().font, (v) => { setPref("font", v); render(); });
     $("speed").onclick = () => choose("מהירות מעבר בין סטטוסים", SPEEDS, getPrefs().speed, (v) => { setPref("speed", v); render(); });
+    $("arrange").onclick = arrange;
     $("muted").onclick = () => chooseMany("ערוצים מושתקים", MUTABLE, getPrefs().muted, (v) => { setPref("muted", v); render(); });
     $("seenAll").onclick = markAllSeen;
     if ($("logoutRow")) $("logoutRow").onclick = () => confirmDlg("להתנתק?", "תצטרכו להתחבר שוב עם Google.", "התנתקות", () => {
@@ -101,6 +103,39 @@
     try { localStorage.setItem("nayes_seen", JSON.stringify([...all].slice(-400))); } catch {}
     setUnreadBadge(0);
     snack("כל המבזקים סומנו כנצפו");
+  }
+
+  // ---------- סידור ערוצים ונעיצה ----------
+  function arrange() {
+    const all = { all: "נייעס סטטוס (הכל)", ...TOOL_CHANNELS, hot: "דחוף", city: `העיר שלי (${getPrefs().city || "ירושלים"})`,
+      ...Object.fromEntries(Object.entries(CATEGORIES).map(([k, c]) => [k, c.name])) };
+    let list = byUserOrder(Object.keys(all), (k) => k);
+    const pins = new Set(getPrefs().pinned || []);
+    const back = document.createElement("div");
+    back.className = "dlg-back";
+    const draw = () => {
+      back.innerHTML = `<div class="dlg arrange" role="dialog" aria-modal="true"><h3>סידור ערוצים ונעיצה</h3>
+        <p>📌 נעוץ = תמיד למעלה. החצים קובעים את הסדר.</p>
+        <div class="ar-list">${list.map((k, i) => `<div class="ar-row">
+          <button class="ar-pin ${pins.has(k) ? "on" : ""}" data-pin="${k}" aria-label="נעיצה">${icon("pin", 18, 2)}</button>
+          <span>${esc(all[k])}</span>
+          <button data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="למעלה">▲</button>
+          <button data-down="${i}" ${i === list.length - 1 ? "disabled" : ""} aria-label="למטה">▼</button></div>`).join("")}</div>
+        <div class="btns"><button data-reset>ברירת מחדל</button><button data-cancel>ביטול</button><button data-ok>שמירה</button></div></div>`;
+      back.querySelectorAll("[data-pin]").forEach((b) => (b.onclick = () => { const k = b.dataset.pin; pins.has(k) ? pins.delete(k) : pins.add(k); draw(); }));
+      back.querySelectorAll("[data-up]").forEach((b) => (b.onclick = () => { const i = +b.dataset.up; [list[i - 1], list[i]] = [list[i], list[i - 1]]; draw(); }));
+      back.querySelectorAll("[data-down]").forEach((b) => (b.onclick = () => { const i = +b.dataset.down; [list[i + 1], list[i]] = [list[i], list[i + 1]]; draw(); }));
+      back.querySelector("[data-cancel]").onclick = () => back.remove();
+      back.querySelector("[data-reset]").onclick = () => { setPref("order", []); setPref("pinned", ["zmanim", "rates", "oref"]); back.remove(); snack("הסדר חזר לברירת המחדל"); render(); };
+      back.querySelector("[data-ok]").onclick = () => {
+        setPref("order", list);
+        setPref("pinned", list.filter((k) => pins.has(k)));
+        back.remove(); snack("הסידור נשמר"); render();
+      };
+    };
+    back.addEventListener("click", (e) => { if (e.target === back) back.remove(); });
+    draw();
+    document.body.appendChild(back);
   }
 
   // ---------- חלונות בחירה ----------

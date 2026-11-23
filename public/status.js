@@ -228,10 +228,13 @@
       return `<button class="chan" data-ch="${ch.key}">
         ${avatar(ch, 52, true)}
         <span class="mid"><b>${esc(ch.name)}</b><span class="last">${esc(latest ? latest.title : "")}</span></span>
-        <span class="end"><span class="t ${n ? "new" : ""}">${esc(latest ? clock(latest.published_at) : "")}</span>${n ? `<span class="badge">${n}</span>` : ""}${ch.muted ? `<span style="color:var(--muted)">${icon("bellOff", 18)}</span>` : ""}</span>
+        <span class="end"><span class="t ${n ? "new" : ""}">${esc(latest ? clock(latest.published_at) : "")}</span>${n ? `<span class="badge">${n}</span>` : ""}${ch.muted ? `<span style="color:var(--muted)">${icon("bellOff", 18)}</span>` : ""}${(getPrefs().pinned || []).includes(ch.key) ? `<span class="pin-ic">${icon("pin", 16, 1.8)}</span>` : ""}</span>
       </button>`;
     };
-    $("chans").innerHTML = chs.map(chanRow).join("") + (mutedChs.length
+    // ערוצים נעוצים קודם, ואחריהם השאר לפי הסדר שהקורא בחר (ובלי סדר: קודם מה שחדש)
+    const pinnedKeys = getPrefs().pinned || [];
+    const listChs = [...byUserOrder(chs.filter((c) => pinnedKeys.includes(c.key))), ...((getPrefs().order || []).length ? byUserOrder(chs.filter((c) => !pinnedKeys.includes(c.key))) : ordered.filter((c) => !pinnedKeys.includes(c.key)))];
+    $("chans").innerHTML = listChs.map(chanRow).join("") + (mutedChs.length
       ? `<button class="muted-toggle" id="muted-toggle">ערוצים מושתקים (${mutedChs.length}) ${icon("chevLeft", 18)}</button>
          <div class="muted-list" id="muted-list">${mutedChs.map(chanRow).join("")}</div>`
       : "");

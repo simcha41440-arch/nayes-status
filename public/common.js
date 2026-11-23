@@ -324,3 +324,11 @@ function openShare({ title = "נייעס סטטוס", text = "", url = location.
   if (more) more.onclick = async () => { close(); try { await navigator.share({ title, text, url }); } catch {} };
   document.body.appendChild(back);
 }
+
+// סידור ערוצים לפי בחירת הקורא (prefs.order). ערוץ שלא סודר נשאר במקומו היחסי, אחרי המסודרים.
+function byUserOrder(list, keyOf = (x) => x.key) {
+  const order = (getPrefs().order || []);
+  const idx = (k) => { const i = order.indexOf(k); return i < 0 ? 1e6 : i; };
+  return list.map((x, i) => [x, i]).sort((a, b) => idx(keyOf(a[0])) - idx(keyOf(b[0])) || a[1] - b[1]).map((x) => x[0]);
+}
+const TOOL_CHANNELS = { zmanim: "זמני היום", rates: "שער הדולר והמטבעות", oref: "פיקוד העורף" };
