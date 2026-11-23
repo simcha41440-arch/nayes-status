@@ -6,6 +6,7 @@ for (const u of urls) {
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
     const r = await fetch(u, { signal: ctl.signal, headers: { "User-Agent": UA, "Accept-Language": "he,en;q=0.8" }, redirect: "follow" });
     const html = await r.text(); clearTimeout(t);
+    if (/json/.test(r.headers.get("content-type") || "") || /^\s*[\[{]/.test(html)) { console.log(`\n=== JSON ${r.status} ${u}\n${html.slice(0, 1500)}`); continue; }
     const title = (/<title[^>]*>([^<]*)/i.exec(html) || [])[1] || "";
     const og = (/property=["']og:image["'][^>]*content=["']([^"']+)/i.exec(html) || /content=["']([^"']+)["'][^>]*property=["']og:image/i.exec(html) || [])[1] || "";
     const imgs = [...new Set([...html.matchAll(/(https?:)?\/\/[^"'\s)]+?\.(?:jpe?g|png|webp)(?:\?[^"'\s)]*)?/gi)].map((m) => m[0]))].slice(0, 25);
