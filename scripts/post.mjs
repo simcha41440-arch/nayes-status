@@ -34,11 +34,19 @@ const { POST_TITLE, POST_SUMMARY, POST_BODY, POST_CATEGORY, POST_SOURCE, POST_SL
 const media = POST_YOUTUBE ? await youtube(POST_YOUTUBE.trim()) : {};
 if (POST_YOUTUBE) media.image_credit = POST_CREDIT || "וידאו: יוטיוב";
 if (!POST_TITLE || !POST_SUMMARY) throw new Error("חסרים כותרת או טקסט");
-if (POST_SLUG) { // עדכון מבזק קיים
-  const { error } = await db().from("articles").update({ title: POST_TITLE.slice(0, 120), summary: POST_SUMMARY.slice(0, 600), body: POST_BODY || null, ...media })
-    .eq("slug", POST_SLUG);
+let targetSlug = POST_SLUG;
+// "like:מילה" = המבזק האחרון שהכותרת שלו מכילה את המילה; מוקפץ מחדש למעלה
+const bump = Boolean(targetSlug && targetSlug.startsWith("like:"));
+if (bump) {
+  const { data } = await db().from("articles").select("slug,title").eq("status", "published").ilike("title", `%${targetSlug.slice(5)}%`).order("published_at", { ascending: false }).limit(1);
+  if (!data || !data.length) throw new Error("לא נמצא מבזק מתאים");
+  targetSlug = data[0].slug; console.log(`נמצא: ${data[0].title} (${targetSlug})`);
+}
+if (targetSlug) { // עדכון מבזק קיים
+  const { error } = await db().from("articles").update({ title: POST_TITLE.slice(0, 120), summary: POST_SUMMARY.slice(0, 600), body: POST_BODY || null, ...media, ...(bump ? { published_at: new Date().toISOString() } : {}) })
+    .eq("slug", targetSlug);
   if (error) throw error;
-  console.log(`עודכן: ${POST_SLUG}`);
+  console.log(`עודכן: ${targetSlug}`);
   process.exit(0);
 }
 const slug = makeSlug();
