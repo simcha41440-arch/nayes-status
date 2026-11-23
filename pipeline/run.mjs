@@ -307,7 +307,7 @@ async function commonsImage(search, mustWords = []) {
 // תמונת גיבוי לכל ערוץ, כדי שלא יהיה מבזק בלי תמונה
 const CATEGORY_PHOTO = {
   general: "Jerusalem Old City panorama", politics: "Knesset building", community: "Bnei Brak street",
-  torah: "Talmud books bookshelf", economy: "Israeli shekel coins", consumer: "supermarket shelves", local: "Jerusalem city view",
+  torah: "Talmud books", economy: "Israeli shekel coins", consumer: "supermarket shelves", local: "Jerusalem city view",
   health: "hospital Israel building", world: "world map globe", tech: "smartphone technology", weather: "clouds sky Israel",
   music: "violin musical instrument",
 };
