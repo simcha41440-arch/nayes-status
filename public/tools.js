@@ -43,9 +43,8 @@
   }
 
   // שני ערוצים נעוצים בראש רשימת הערוצים (כמו צ'אט נעוץ): זמני היום ופיקוד העורף
-  function renderPinned() {
-    const box = $("pinned");
-    if (!box) return;
+  // שורת כלי נעוץ (זמני היום / שער הדולר / פיקוד העורף). מסך הבית מסדר את כל הנעוצים יחד.
+  function toolRow(k) {
     const o = state.oref[0];
     const row = (key, ic, name, last, end) => `<button class="chan" data-tool="${key}">
       <div class="av plain" style="--s:52px"><span class="face ic" style="background:${CHANNEL_COLORS[ic]}">${icon(ic, 24, 1.7)}</span></div>
@@ -59,10 +58,10 @@
       rates: () => row("rates", "economy", "שער הדולר והמטבעות", usd ? `דולר ${usd.rate.toFixed(3)} ${arrow(usd.change)}${Math.abs(usd.change).toFixed(2)}%${eur ? ` · אירו ${eur.rate.toFixed(3)}` : ""}` : "השער היציג של בנק ישראל", usd ? clock(usd.updated) : ""),
       oref: () => row("oref", "oref", "פיקוד העורף", o ? o.text.replace(/\s+/g, " ").slice(0, 90) : "הנחיות וטלפונים לשעת חירום", o ? timeAgo(o.date) : ""),
     };
-    // רק הכלים שהקורא נעץ, בסדר שבחר
-    const pinned = getPrefs().pinned || [];
-    box.innerHTML = byUserOrder(Object.keys(rows).filter((k) => pinned.includes(k)), (k) => k).map((k) => rows[k]()).join("");
-    box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
+    return rows[k] ? rows[k]() : "";
+  }
+  function renderPinned() {
+    if (window.nayesStatus) window.nayesStatus.rerender();
   }
 
   // "גלו עוד": כרטיסים בסגנון "ערוצים מומלצים" בסטטוס, עם כפתור בתחתית
@@ -306,5 +305,6 @@
   setInterval(() => { if (!document.hidden) loadRates(); }, 60 * 1000);
   api({ onthisday: 1 }).then((r) => { if (DEMO_MODE) return; lastYear = (r && r.articles) || []; if (lastYear.length) renderTools(); }).catch(() => {});
   setInterval(() => { if (!document.hidden) loadState(); }, 60000);
-  window.nayesTools = { openZmanim, openOref, chooseCity, shareSite };
+  window.nayesTools = { openZmanim, openOref, chooseCity, shareSite, toolRow, open: (k) => TOOLS[k] && TOOLS[k]() };
+  renderPinned();
 })();

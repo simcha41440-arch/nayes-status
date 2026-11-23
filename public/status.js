@@ -236,7 +236,15 @@
     // ערוצים נעוצים קודם, ואחריהם השאר לפי הסדר שהקורא בחר (ובלי סדר: קודם מה שחדש)
     const pinnedKeys = getPrefs().pinned || [];
     // נעוצים למעלה בסדר שהקורא קבע; כל השאר: מה שעודכן אחרון ראשון, בדיוק כמו בסטטוס
-    const listChs = [...byUserOrder(chs.filter((c) => pinnedKeys.includes(c.key))), ...byRecent(chs.filter((c) => !pinnedKeys.includes(c.key)))];
+    // כל הנעוצים (כלים וערוצים) ברשימה אחת, בסדר שהקורא קבע
+    const pinnedHtml = byUserOrder(pinnedKeys.map((k) => ({ key: k })))
+      .map(({ key }) => (TOOL_CHANNELS[key] ? (window.nayesTools ? window.nayesTools.toolRow(key) : "") : (chs.find((c) => c.key === key) ? chanRow(chs.find((c) => c.key === key)) : "")))
+      .join("");
+    if ($("pinned")) {
+      $("pinned").innerHTML = pinnedHtml;
+      $("pinned").querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => window.nayesTools.open(b.dataset.tool)));
+    }
+    const listChs = byRecent(chs.filter((c) => !pinnedKeys.includes(c.key)));
     $("chans").innerHTML = listChs.map(chanRow).join("") + (mutedChs.length
       ? `<button class="muted-toggle" id="muted-toggle">ערוצים מושתקים (${mutedChs.length}) ${icon("chevLeft", 18)}</button>
          <div class="muted-list" id="muted-list">${mutedChs.map(chanRow).join("")}</div>`
