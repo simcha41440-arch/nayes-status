@@ -564,21 +564,23 @@ async function main() {
 
     // אין תמונה: תמונת ארכיון אמיתית מוויקישיתוף, רק לנושא כללי (למשל חברי הכנסת החרדים בידיעה על חוק הגיוס) או למקום.
     // תמונת ארכיון של האדם שבמרכז הידיעה (באנגלית, ואם אין: בעברית)
-    if (!imageUrl && !videoUrl && (art.person_query || art.person_he)) {
+    // פיגוע, אסון, פטירה: רק תמונה או סרטון אמיתיים מהאירוע (מהמקור). בלי תמונות ארכיון.
+    const archiveOk = !art.real_media_only;
+    if (archiveOk && !imageUrl && !videoUrl && (art.person_query || art.person_he)) {
       try {
         let im = art.person_query ? await personImage(art.person_query) : null;
         if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()]);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
     }
-    if (!imageUrl && !videoUrl && art.topic_query) {
+    if (archiveOk && !imageUrl && !videoUrl && art.topic_query) {
       try {
         const key = art.topic_query.split(/\s+/).sort((x, y) => y.length - x.length)[0];
         const im = await commonsImage(art.topic_query, [key]);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (נושא): ${err.message}`); }
     }
-    if (!imageUrl && !videoUrl && art.place_query) {
+    if (archiveOk && !imageUrl && !videoUrl && art.place_query) {
       try {
         const words = art.place_query.split(/\s+/).filter((w) => w.length > 3 && !/^(israel|building|city)$/i.test(w)).slice(0, 1);
         const im = await commonsImage(art.place_query, words);
@@ -587,7 +589,7 @@ async function main() {
     }
 
     // אין עדכון בלי תמונה: תמונת ערוץ צבעונית מהמאגר החופשי לפי הנושא
-    if (!imageUrl && !videoUrl) {
+    if (archiveOk && !imageUrl && !videoUrl) {
       const q = CATEGORY_PHOTO[item.source.category || art.category] || CATEGORY_PHOTO.general;
       try { const im = await commonsImage(q, []); if (im) { imageUrl = im.url; credit = im.credit; } }
       catch (err) { console.log(`  תמונת ערוץ: ${err.message}`); }

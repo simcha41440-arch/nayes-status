@@ -126,6 +126,9 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   (למשל "shekel coins", "supermarket shelves", "car dashboard", "electricity meter"). בלי אנשים ובלי פרצופים.
   בכל ידיעה אחרת, ובמיוחד ידיעה על אדם מסוים (פוליטיקאי, רב, אדמו"ר), פוליטיקה, קהילה, עולם התורה, ביטחון, אסון או פטירה:
   מחרוזת ריקה. לא כל מבזק צריך תמונה, ומבזק בלי תמונה מוצג כסטטוס טקסט יפה.
+- real_media_only: true לפיגוע, אירוע ביטחוני עם נפגעים, אסון, תאונה קשה או פטירה. באירועים כאלה מציגים רק תמונה או סרטון
+  אמיתיים מהאירוע עצמו (ממקור רשמי). אין תמונת ארכיון, אין תמונת מקום ואין תמונת נושא, ולכן person_query, person_he,
+  topic_query ו-place_query יהיו מחרוזות ריקות. בכל ידיעה אחרת: false.
 - person_query: אם הידיעה עוסקת באדם מוכר אחד (גבר בלבד): רב, אדמו"ר, ראש ישיבה, פוליטיקאי, שר, נשיא וכו',
   גם באירוע שלו (פגישה, ביקור, שמחה): שמו המלא באנגלית כפי שבוויקיפדיה ("Shaul Alter", "Aryeh Deri", "Benjamin Netanyahu").
   אם שני אנשים מרכזיים: שני השמות מופרדים ב-" | ". תוצג תמונת ארכיון שלו עם הקרדיט "צילום ארכיון". אחרת: מחרוזת ריקה.
@@ -139,7 +142,7 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain Jerusalem"). בלי אנשים מזוהים בנושא אישי.
 - place_query: אם הידיעה עוסקת במקום מסוים (עיר, אתר, מבנה, כביש) ואין אדם מרכזי: 2-4 מילים באנגלית לחיפוש
   תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport",
-  "Ramot Junction Jerusalem"). גם בפיגוע או תאונה: תמונה של המקום עצמו (הצומת, הכביש, העיר) מתאימה. בפטירה: מחרוזת ריקה.`;
+  "Ramot Junction Jerusalem"). בפיגוע, אסון, תאונה קשה או פטירה: מחרוזת ריקה (ראה real_media_only).`;
 
 const ARTICLE_SCHEMA = {
   type: "object",
@@ -160,12 +163,13 @@ const ARTICLE_SCHEMA = {
     topic_query: { type: "string" },
     person_query: { type: "string" },
     person_he: { type: "string" },
+    real_media_only: { type: "boolean" },
     place_query: { type: "string" },
     update_index: { type: "integer" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "person_query", "person_he", "place_query", "update_index",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "person_query", "person_he", "real_media_only", "place_query", "update_index",
   ],
   additionalProperties: false,
 };
