@@ -126,10 +126,14 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   (למשל "shekel coins", "supermarket shelves", "car dashboard", "electricity meter"). בלי אנשים ובלי פרצופים.
   בכל ידיעה אחרת, ובמיוחד ידיעה על אדם מסוים (פוליטיקאי, רב, אדמו"ר), פוליטיקה, קהילה, עולם התורה, ביטחון, אסון או פטירה:
   מחרוזת ריקה. לא כל מבזק צריך תמונה, ומבזק בלי תמונה מוצג כסטטוס טקסט יפה.
+- person_query: אם הידיעה עוסקת באדם מוכר אחד (גבר בלבד): רב, אדמו"ר, ראש ישיבה, פוליטיקאי, שר, נשיא וכו',
+  גם באירוע שלו (פגישה, ביקור, שמחה): שמו המלא באנגלית כפי שבוויקיפדיה ("Shaul Alter", "Aryeh Deri", "Benjamin Netanyahu").
+  אם שני אנשים מרכזיים: שני השמות מופרדים ב-" | ". תוצג תמונת ארכיון שלו עם הקרדיט "צילום ארכיון". אחרת: מחרוזת ריקה.
+- person_he: אותו שם בעברית, בלי תארים ("שאול אלתר", "אריה דרעי"). אחרת: מחרוזת ריקה.
 - topic_query: תמונת ארכיון אמיתית רק כשהידיעה עוסקת בנושא כללי שיש לו "פנים" מוכרות, ולא באירוע מסוים של אדם מסוים.
   למשל: חוק הגיוס או תקציב הישיבות → "United Torah Judaism Knesset"; ש"ס בכנסת → "Shas Knesset";
   דיון סוער במליאה → "Knesset plenum"; תפילה המונית בכותל → "Western Wall prayer".
-  ידיעה על פגישה, ביקור, נאום או אירוע של אדם מסוים (למשל "דרעי נפגש עם..."): מחרוזת ריקה, כדי שלא תוצג תמונה שלא מהאירוע.
+  כשיש person_query, topic_query משמש רק כגיבוי.
   חשוב: כמעט לכל ידיעה צריכה להיות תמונה צבעונית ומושכת. אם אין מקום מוגדר, תן topic_query כללי שמתאים לנושא
   (למשל "Israel Police car", "Magen David Adom ambulance", "Israeli shekel coins", "IDF soldiers", "Jerusalem light rail",
   "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain Jerusalem"). בלי אנשים מזוהים בנושא אישי.
@@ -154,12 +158,14 @@ const ARTICLE_SCHEMA = {
     needs_review: { type: "boolean" },
     image_query: { type: "string" },
     topic_query: { type: "string" },
+    person_query: { type: "string" },
+    person_he: { type: "string" },
     place_query: { type: "string" },
     update_index: { type: "integer" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "place_query", "update_index",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "person_query", "person_he", "place_query", "update_index",
   ],
   additionalProperties: false,
 };

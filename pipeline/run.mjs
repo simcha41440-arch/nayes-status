@@ -304,6 +304,14 @@ async function commonsImage(search, mustWords = []) {
 }
 
 // אדם אחד או שניים ("A | B"). קודם מחפשים תמונה של שניהם יחד; אם אין, תמונה של החשוב מביניהם.
+// תמונת גיבוי לכל ערוץ, כדי שלא יהיה מבזק בלי תמונה
+const CATEGORY_PHOTO = {
+  general: "Jerusalem Old City panorama", politics: "Knesset building", community: "Bnei Brak street",
+  torah: "Talmud books bookshelf", economy: "Israeli shekel coins", consumer: "supermarket shelves", local: "Jerusalem city view",
+  health: "hospital Israel building", world: "world map globe", tech: "smartphone technology", weather: "clouds sky Israel",
+  music: "violin musical instrument",
+};
+
 async function personImage(query) {
   const names = query.split("|").map((s) => s.trim()).filter(Boolean).slice(0, 2);
   const last = (n) => n.split(/\s+/).pop();
@@ -555,6 +563,14 @@ async function main() {
     }
 
     // אין תמונה: תמונת ארכיון אמיתית מוויקישיתוף, רק לנושא כללי (למשל חברי הכנסת החרדים בידיעה על חוק הגיוס) או למקום.
+    // תמונת ארכיון של האדם שבמרכז הידיעה (באנגלית, ואם אין: בעברית)
+    if (!imageUrl && !videoUrl && (art.person_query || art.person_he)) {
+      try {
+        let im = art.person_query ? await personImage(art.person_query) : null;
+        if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()]);
+        if (im) { imageUrl = im.url; credit = im.credit; }
+      } catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
+    }
     if (!imageUrl && !videoUrl && art.topic_query) {
       try {
         const key = art.topic_query.split(/\s+/).sort((x, y) => y.length - x.length)[0];
@@ -568,6 +584,13 @@ async function main() {
         const im = await commonsImage(art.place_query, words);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (מקום): ${err.message}`); }
+    }
+
+    // אין עדכון בלי תמונה: תמונת ערוץ צבעונית מהמאגר החופשי לפי הנושא
+    if (!imageUrl && !videoUrl) {
+      const q = CATEGORY_PHOTO[item.source.category || art.category] || CATEGORY_PHOTO.general;
+      try { const im = await commonsImage(q, []); if (im) { imageUrl = im.url; credit = im.credit; } }
+      catch (err) { console.log(`  תמונת ערוץ: ${err.message}`); }
     }
 
     // פרסום אוטומטי, חוץ ממקרים רציניים שהעורך סימן לבדיקה של אדם
