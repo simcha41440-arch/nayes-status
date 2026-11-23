@@ -277,11 +277,21 @@ const WM_UA = { "User-Agent": "NayesStatusBot/1.0 (https://www.nayesstatus.com)"
 const stripTags = (h = "") => String(h).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
 async function commonsImage(search, mustWords = []) {
-  const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=10`
+  const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=20`
     + `&gsrsearch=${encodeURIComponent(search + " filetype:bitmap")}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=1080`;
   const r = await fetch(api, { headers: WM_UA });
   if (!r.ok) throw new Error(`Commons ${r.status}`);
-  const pages = Object.values((await r.json()).query?.pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
+  // מהרלוונטיות הגבוהה, מעדיפים את התמונות העדכניות ביותר (לפי תאריך הצילום)
+  const year = (p) => {
+    const m = p.imageinfo?.[0]?.extmetadata || {};
+    const d = stripTags(m.DateTimeOriginal?.value || m.DateTime?.value || "");
+    const y = Number((/(19|20)\d\d/.exec(d) || [])[0]);
+    return y || 0;
+  };
+  const pages = Object.values((await r.json()).query?.pages || {})
+    .sort((a, b) => (a.index || 0) - (b.index || 0))
+    .slice(0, 12)
+    .sort((a, b) => year(b) - year(a));
   for (const p of pages) {
     const info = p.imageinfo?.[0];
     if (!info || !/image\/(jpeg|png)/.test(info.mime || "")) continue;
