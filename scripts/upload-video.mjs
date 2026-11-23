@@ -8,6 +8,9 @@ import crypto from "node:crypto";
 import { db, makeSlug } from "../api/_lib/db.js";
 import { checkFrames } from "../api/_lib/ai.js";
 const run = promisify(execFile);
+// ffmpeg מוכן מראש (בלי התקנה איטית בשרת)
+const FFMPEG = (await import("ffmpeg-static").catch(() => ({}))).default || "ffmpeg";
+const FFPROBE = (await import("ffprobe-static").catch(() => ({}))).default?.path || "ffprobe";
 const file = process.argv[2];
 const { POST_TITLE, POST_SUMMARY, POST_BODY, POST_CATEGORY, POST_CREDIT } = process.env;
 
@@ -30,9 +33,9 @@ if (/\.(jpe?g|png|webp)$/i.test(file)) {
 }
 
 const dir = await mkdtemp(path.join(tmpdir(), "v-"));
-const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]);
+const { stdout } = await run(FFPROBE, ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]);
 const dur = Number(stdout) || 10;
-await run("ffmpeg", ["-v", "error", "-i", file, "-vf", `fps=${Math.min(1, 16 / dur)},scale=512:-2`, "-frames:v", "16", path.join(dir, "f%02d.jpg")]);
+await run(FFMPEG, ["-v", "error", "-i", file, "-vf", `fps=${Math.min(1, 16 / dur)},scale=512:-2`, "-frames:v", "16", path.join(dir, "f%02d.jpg")]);
 const frames = await Promise.all((await readdir(dir)).sort().map(async (f) => {
   const buffer = await readFile(path.join(dir, f));
   return { base64: buffer.toString("base64"), mediaType: "image/jpeg", buffer };
