@@ -4,6 +4,13 @@ import { checkAndStore } from "../api/_lib/media.js";
 
 // סרטון מיוטיוב: מוטמע באתר (לא מועתק). תמונת התצוגה שלו נבדקת לפני הפרסום.
 async function youtube(input) {
+  // כמה סרטונים ברצף (אלבום): "ids:ID1,ID2,ID3"
+  if (input.startsWith("ids:")) {
+    const ids = input.slice(4).split(",").map((x) => x.trim()).filter((x) => /^[A-Za-z0-9_-]{11}$/.test(x));
+    if (!ids.length) throw new Error("אין מזהי סרטונים תקינים");
+    const first = await youtube(ids[0]);
+    return { ...first, video_url: `https://www.youtube-nocookie.com/embed/${ids[0]}?playlist=${ids.join(",")}` };
+  }
   // רשימת השמעה (אלבום שלם)
   const list = (/[?&]list=([A-Za-z0-9_-]+)/.exec(input) || [])[1];
   if (list && !/[?&]v=/.test(input)) return { video_url: `https://www.youtube-nocookie.com/embed/videoseries?list=${list}`, image_url: null };

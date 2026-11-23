@@ -425,7 +425,7 @@
 
     const title = esc(a.title);
     const hotTag = a.is_breaking ? `<span class="hot-pill">${icon("hot", 15, 2)} דחוף</span>` : "";
-    const yt = /^https:\/\/www\.youtube-nocookie\.com\/embed\/([A-Za-z0-9_-]{11}|videoseries\?list=[A-Za-z0-9_-]+)$/.test(a.video_url || "");
+    const yt = /^https:\/\/www\.youtube-nocookie\.com\/embed\/([A-Za-z0-9_-]{11}(\?playlist=[A-Za-z0-9_,-]+)?|videoseries\?list=[A-Za-z0-9_-]+)$/.test(a.video_url || "");
     document.getElementById("stage").classList.toggle("has-yt", yt);
     $("s-media").innerHTML = yt
       ? `<div class="s-img s-yt"><iframe src="${esc(a.video_url)}${a.video_url.includes("?") ? "&" : "?"}rel=0&modestbranding=1&playsinline=1" title="${title}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
