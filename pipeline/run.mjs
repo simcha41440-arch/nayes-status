@@ -551,6 +551,15 @@ async function main() {
     let credit = (imageUrl || videoUrl) && item.credit ? `${videoUrl ? "תיעוד" : "צילום"}: ${item.credit}` : null;
     // אין תמונה מהמקור: תמונת אילוסטרציה ממאגר חופשי, רק בכלכלה וצרכנות (כסף, מוצרים, מחירים).
     // ידיעה על אנשים, פוליטיקה, רבנים, קהילה או ביטחון בלי תמונה רשמית: בלי תמונה בכלל (סטטוס טקסט).
+    // יש אדם במרכז הידיעה (גם בכלכלה, למשל מנכ"ל): קודם תמונה שלו, ורק אחר כך אילוסטרציה
+    const archiveOk = !art.real_media_only;
+    if (archiveOk && !imageUrl && !videoUrl && (art.person_query || art.person_he)) {
+      try {
+        let im = art.person_query ? await personImage(art.person_query) : null;
+        if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()], `a photo of ${art.person_he}`);
+        if (im) { imageUrl = im.url; credit = im.credit; }
+      } catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
+    }
     const wantStock = Boolean(art.image_query) && STOCK_CATEGORIES.has(art.category) && !imageUrl && !videoUrl;
     if (PIXABAY_KEY && wantStock) {
       if (!videoUrl && art.score >= VIDEO_MIN_SCORE) {
@@ -584,14 +593,6 @@ async function main() {
     // אין תמונה: תמונת ארכיון אמיתית מוויקישיתוף, רק לנושא כללי (למשל חברי הכנסת החרדים בידיעה על חוק הגיוס) או למקום.
     // תמונת ארכיון של האדם שבמרכז הידיעה (באנגלית, ואם אין: בעברית)
     // פיגוע, אסון, פטירה: רק תמונה או סרטון אמיתיים מהאירוע (מהמקור). בלי תמונות ארכיון.
-    const archiveOk = !art.real_media_only;
-    if (archiveOk && !imageUrl && !videoUrl && (art.person_query || art.person_he)) {
-      try {
-        let im = art.person_query ? await personImage(art.person_query) : null;
-        if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()], `a photo of ${art.person_he}`);
-        if (im) { imageUrl = im.url; credit = im.credit; }
-      } catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
-    }
     if (archiveOk && !imageUrl && !videoUrl && art.topic_query) {
       try {
         const key = art.topic_query.split(/\s+/).sort((x, y) => y.length - x.length)[0];
