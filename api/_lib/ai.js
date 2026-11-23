@@ -141,7 +141,11 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   כשיש person_query, topic_query משמש רק כגיבוי.
   חשוב: כמעט לכל ידיעה צריכה להיות תמונה צבעונית ומושכת. אם אין מקום מוגדר, תן topic_query כללי שמתאים לנושא
   (למשל "Israel Border Police officers", "Israel Police officers", "IDF soldiers operation", "White House north facade", "Israel Police car", "Magen David Adom ambulance", "Israeli shekel coins", "IDF soldiers", "Jerusalem light rail",
-  "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain Jerusalem"). בלי אנשים מזוהים בנושא אישי.
+  "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain street Jerusalem"). בלי אנשים מזוהים בנושא אישי. חפש סצנה אמיתית ופעילה, לא חפץ או סמל: גשם = רחובות רטובים,
+  פעילות צה"ל = כוחות בפעילות מבצעית, משטרה = שוטרים בשטח.
+- image_desc: משפט קצר באנגלית: מה תמונת הארכיון צריכה להראות בדיוק, כדי שתתאים לידיעה ותהיה מרשימה.
+  למשל "rainy streets of Jerusalem with umbrellas and wet roads", "IDF soldiers during an operational raid at night",
+  "Israel Border Police officers on duty in the field", "the Knesset plenum during a session", "the White House exterior".
 - place_query: אם הידיעה עוסקת במקום מסוים (עיר, אתר, מבנה, כביש) ואין אדם מרכזי: 2-4 מילים באנגלית לחיפוש
   תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport",
   "Ramot Junction Jerusalem"). בפיגוע, אסון, תאונה קשה או פטירה: מחרוזת ריקה (ראה real_media_only).`;
@@ -166,12 +170,13 @@ const ARTICLE_SCHEMA = {
     person_query: { type: "string" },
     person_he: { type: "string" },
     real_media_only: { type: "boolean" },
+    image_desc: { type: "string" },
     place_query: { type: "string" },
     update_index: { type: "integer" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "person_query", "person_he", "real_media_only", "place_query", "update_index",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "person_query", "person_he", "real_media_only", "image_desc", "place_query", "update_index",
   ],
   additionalProperties: false,
 };
@@ -249,14 +254,16 @@ const IMAGE_SYSTEM = `אתה בודק תמונות (של מבזקים ושל מ�
 reason: הסבר קצר בעברית.`;
 
 /** בודק תמונה (קובץ בקידוד base64). */
-export async function checkImage({ base64, mediaType }) {
+export async function checkImage({ base64, mediaType, want }) {
   const result = await askJson({
     system: IMAGE_SYSTEM,
     maxTokens: 2000,
     schema: IMAGE_SCHEMA,
     content: [
       { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-      { type: "text", text: "בדוק את התמונה לפי המדיניות." },
+      { type: "text", text: want
+        ? `בדוק את התמונה לפי המדיניות. בנוסף, התמונה צריכה להראות בבירור: ${want}. אם היא לא מראה את זה (למשל חפץ במקום רחוב, אדם מתפלל במקום פעילות מבצעית, שרטוט במקום מבנה): approved=false עם reason "לא מתאים לנושא".`
+        : "בדוק את התמונה לפי המדיניות." },
     ],
   });
   if (result.refused) return { approved: false, reason: "הבדיקה נכשלה, התמונה נפסלה" };

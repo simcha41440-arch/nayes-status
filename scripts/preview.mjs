@@ -29,6 +29,12 @@ const SAMPLES = [
 
 const articles = [];
 let n = 0;
+// מבזקים אמיתיים ממצב ניסיון (DRY_FILE), במקום הדוגמאות
+if (process.env.DRY_FILE) {
+  const rows = JSON.parse(await readFile(process.env.DRY_FILE, "utf8"));
+  rows.filter((r) => !r._update).forEach((r, i) => articles.push({ ...r, slug: `demo-${i + 1}`, cat: r.category, published_at: new Date(Date.now() - i * 300000).toISOString(), reactions: {}, views: 0 }));
+  SAMPLES.length = 0;
+}
 for (const s of SAMPLES) {
   const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=${encodeURIComponent(s.q + " filetype:bitmap")}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=1080`;
   const pages = Object.values((await (await fetch(api, { headers: UA })).json()).query?.pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
@@ -66,7 +72,11 @@ const server = http.createServer(async (q, r) => {
   if (u.pathname === "/api/rates") { const fake = { setHeader() {}, status() { return fake; }, json: (o) => json(o) }; return ratesHandler({}, fake); }
   if (u.pathname === "/api/state") return json({ emergency: null, oref: [] });
   if (u.pathname === "/api/me") return json({ requireLogin: false });
-  if (u.pathname.startsWith("/media/")) { r.setHeader("content-type", u.pathname.endsWith(".png") ? "image/png" : "image/jpeg"); return r.end(await readFile(`${OUT}${u.pathname}`)); }
+  if (u.pathname.startsWith("/media/")) {
+    r.setHeader("content-type", /\.png$/.test(u.pathname) ? "image/png" : /\.webp$/.test(u.pathname) ? "image/webp" : "image/jpeg");
+    try { return r.end(await readFile(`${OUT}${u.pathname}`)); }
+    catch { const x = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/public/media/${u.pathname.slice(7)}`); return r.end(Buffer.from(await x.arrayBuffer())); }
+  }
   let f = path.join(root, u.pathname === "/" || u.pathname.startsWith("/article/") ? "index.html" : u.pathname);
   try { const b = await readFile(f); r.setHeader("content-type", types[path.extname(f)] || "application/octet-stream"); r.end(b); }
   catch { r.statusCode = 404; r.end(); }

@@ -276,7 +276,7 @@ async function notifyTelegram(text) {
 const WM_UA = { "User-Agent": "NayesStatusBot/1.0 (https://www.nayesstatus.com)" };
 const stripTags = (h = "") => String(h).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-async function commonsImage(search, mustWords = []) {
+async function commonsImage(search, mustWords = [], want = "") {
   const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=20`
     + `&gsrsearch=${encodeURIComponent(search + " filetype:bitmap")}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=1080`;
   const r = await fetch(api, { headers: WM_UA });
@@ -304,7 +304,7 @@ async function commonsImage(search, mustWords = []) {
     const imgRes = await fetch(info.thumburl || info.url, { headers: WM_UA });
     if (!imgRes.ok) continue;
     const type = (imgRes.headers.get("content-type") || "image/jpeg").split(";")[0];
-    const stored = await checkAndStore({ buffer: Buffer.from(await imgRes.arrayBuffer()), type });
+    const stored = await checkAndStore({ buffer: Buffer.from(await imgRes.arrayBuffer()), type }, want);
     if (!stored.approved) continue;
     const gpo = /government press office|\bgpo\b/i.test(text);
     const artist = stripTags(meta.Artist?.value || "").slice(0, 60);
@@ -369,15 +369,22 @@ async function frontPages(hm) {
   }
 }
 
+// מצב ניסיון: כותב מבזקים אמיתיים מהחדשות של עכשיו, אבל לא שומר ולא מפרסם (לתצוגה מקדימה בלבד)
+const DRY = process.env.DRY_RUN === "true";
+const dryRows = [];
+const chain = () => { const c = { eq: () => c, in: () => c, like: () => c, then: (f) => Promise.resolve({ error: null }).then(f) }; return c; };
+const W = () => (DRY ? { insert: async (r) => { if (r.status === "published") dryRows.push(r); return { error: null }; }, update: (r) => { dryRows.push({ ...r, _update: true }); return chain(); } } : db().from("articles"));
+
 async function main() {
   // מתג השהיה: כשהקובץ pipeline/PAUSED קיים, אין עדכונים בכלל
-  if (existsSync(new URL("./PAUSED", import.meta.url))) { console.log("החדשות מושהות."); return; }
+  if (!DRY && existsSync(new URL("./PAUSED", import.meta.url))) { console.log("החדשות מושהות."); return; }
   // עד שמגדירים את המפתחות ב-GitHub, הסריקה פשוט מדלגת (בלי שגיאות ובלי מיילים על כישלון).
   const missing = ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !process.env[k]);
   if (missing.length) {
     console.log(`הסריקה מדלגת: חסרים ${missing.join(", ")} בהגדרות (Settings > Secrets and variables > Actions).`);
     return;
   }
+  if (!DRY) {
   // ניקוי: תמונות אילוסטרציה שעלו בעבר על נושאים שלא מתאים להם (פוליטיקה, אנשים וכו') יורדות, והמבזק נשאר כטקסט
   try {
     const { data: stale } = await db().from("articles").select("id,category")
@@ -409,18 +416,19 @@ async function main() {
 
   // הודעת "פרסמו אצלנו" מהימים הראשונים יורדת מהאתר
   await db().from("articles").update({ status: "rejected" }).eq("slug", "welcome-5").eq("status", "published").then(() => {}, () => {});
+  }
 
   // לילה: עד 01:00 כרגיל. מ-01:00 עד 06:00 רק פעמיים (02:30 ו-04:30). ב-06:00 חוזרים, עם מה שהיה בלילה.
   const hm = (() => { const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date()).split(":").map(Number); return h * 60 + m; })();
   const NIGHT_SLOTS = [150, 270]; // 02:30, 04:30
-  if (hm >= 60 && hm < 360 && !NIGHT_SLOTS.some((s) => hm >= s && hm < s + 15) && process.env.IGNORE_NIGHT !== "true") {
+  if (!DRY && hm >= 60 && hm < 360 && !NIGHT_SLOTS.some((s) => hm >= s && hm < s + 15) && process.env.IGNORE_NIGHT !== "true") {
     console.log("לילה: אין סריקה עכשיו. הסריקות הבאות ב-02:30, 04:30 ומ-06:00 כרגיל.");
     return;
   }
 
   // שבת וימים טובים: אין עדכונים בכלל (וגם לא עולה כסף)
   const holy = globalThis.Zmanim.holyNow(new Date());
-  if (holy && process.env.IGNORE_SHABBAT !== "true") {
+  if (!DRY && holy && process.env.IGNORE_SHABBAT !== "true") {
     console.log(`${holy}: אין עדכונים. הסריקה תחזור במוצאי ${holy === "שבת" ? "שבת" : "החג"}.`);
     return;
   }
@@ -448,7 +456,7 @@ async function main() {
     if (verdicts[i].pass) { if (batch.length < MAX_PER_RUN) batch.push(candidates[i]); continue; }
     console.log(`  ✗ (סינון ראשוני) [${candidates[i].source.name}] ${verdicts[i].reason.slice(0, 120)}`);
     // נשמר כנפסל כדי לא לבדוק שוב
-    await db().from("articles").insert({
+    await W().insert({
       slug: makeSlug(), title: "(נפסל)", status: "rejected", source_name: candidates[i].source.name,
       source_url: candidates[i].link, source_hash: candidates[i].hash, ai_notes: `סינון ראשוני: ${verdicts[i].reason}`.slice(0, 500),
     });
@@ -486,11 +494,11 @@ async function main() {
     // התפתחות של אירוע שכבר פורסם: מעדכנים את אותו מבזק (ומקפיצים אותו למעלה כחדש), במקום מבזק נוסף
     const target = art.relevant && Number.isInteger(art.update_index) && art.update_index >= 0 ? recentTitles[art.update_index] : null;
     if (target && target.slug) {
-      const { error: ue } = await db().from("articles").update({
+      const { error: ue } = await W().update({
         title: art.title, summary: art.summary || null, body: art.body || null, impact: art.impact || null,
         is_breaking: art.is_breaking, published_at: new Date().toISOString(),
       }).eq("slug", target.slug);
-      await db().from("articles").insert({ ...base, title: "(עדכון)", status: "rejected", ai_notes: `עודכן לתוך ${target.slug}` });
+      await W().insert({ ...base, title: "(עדכון)", status: "rejected", ai_notes: `עודכן לתוך ${target.slug}` });
       if (!ue) {
         console.log(`  ↻ [${item.source.name}] עודכן: ${art.title}`);
         Object.assign(target, { title: art.title, summary: art.summary });
@@ -506,7 +514,7 @@ async function main() {
     if (!art.relevant) {
       console.log(`  ✗ [${item.source.name}] ${(art.reject_reason || "").slice(0, 140)}`);
       // שומרים גם ידיעות שנפסלו, כדי לא לשלם על עיבוד שלהן שוב.
-      await db().from("articles").insert({
+      await W().insert({
         ...base,
         title: "(נפסל)",
         status: "rejected",
@@ -580,21 +588,21 @@ async function main() {
     if (archiveOk && !imageUrl && !videoUrl && (art.person_query || art.person_he)) {
       try {
         let im = art.person_query ? await personImage(art.person_query) : null;
-        if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()]);
+        if (!im && art.person_he) im = await commonsImage(`"${art.person_he}"`, [art.person_he.trim().split(/\s+/).pop()], `a photo of ${art.person_he}`);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (אדם): ${err.message}`); }
     }
     if (archiveOk && !imageUrl && !videoUrl && art.topic_query) {
       try {
         const key = art.topic_query.split(/\s+/).sort((x, y) => y.length - x.length)[0];
-        const im = await commonsImage(art.topic_query, [key]);
+        const im = await commonsImage(art.topic_query, [key], art.image_desc || art.topic_query);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (נושא): ${err.message}`); }
     }
     if (archiveOk && !imageUrl && !videoUrl && art.place_query) {
       try {
         const words = art.place_query.split(/\s+/).filter((w) => w.length > 3 && !/^(israel|building|city)$/i.test(w)).slice(0, 1);
-        const im = await commonsImage(art.place_query, words);
+        const im = await commonsImage(art.place_query, words, art.image_desc || art.place_query);
         if (im) { imageUrl = im.url; credit = im.credit; }
       } catch (err) { console.log(`  ויקישיתוף (מקום): ${err.message}`); }
     }
@@ -602,7 +610,7 @@ async function main() {
     // אין עדכון בלי תמונה: תמונת ערוץ צבעונית מהמאגר החופשי לפי הנושא
     if (archiveOk && !imageUrl && !videoUrl) {
       const q = CATEGORY_PHOTO[item.source.category || art.category] || CATEGORY_PHOTO.general;
-      try { const im = await commonsImage(q, []); if (im) { imageUrl = im.url; credit = im.credit; } }
+      try { const im = await commonsImage(q, [], q); if (im) { imageUrl = im.url; credit = im.credit; } }
       catch (err) { console.log(`  תמונת ערוץ: ${err.message}`); }
     }
 
@@ -626,11 +634,11 @@ async function main() {
       status: publishNow ? "published" : "pending",
       published_at: publishNow ? new Date().toISOString() : null,
     };
-    let { error } = await db().from("articles").insert(row);
+    let { error } = await W().insert(row);
     if (error && /image_credit|video_url|video_sound/.test(error.message || "")) {
       // עדכון במסד הנתונים עוד לא הורץ: שומרים בלי העמודות החדשות
       const { image_credit, video_url, video_sound, ...basic } = row;
-      ({ error } = await db().from("articles").insert(basic));
+      ({ error } = await W().insert(basic));
     }
     if (error) {
       console.warn("⚠ שמירה נכשלה:", error.message);
@@ -644,6 +652,12 @@ async function main() {
 
   console.log(`✓ ${accepted} ידיעות נכתבו, ${rejected} נפסלו.`);
 
+  if (DRY) {
+    const { writeFile: wf } = await import("node:fs/promises");
+    await wf(process.env.DRY_FILE || "dry.json", JSON.stringify(dryRows, null, 1));
+    console.log(`מצב ניסיון: ${dryRows.length} מבזקים נשמרו לקובץ (לא פורסמו)`);
+    return;
+  }
   if (newTitles.length) {
     const head = AUTO_PUBLISH
       ? `נייעס סטטוס: ${newTitles.length} מבזקים חדשים`

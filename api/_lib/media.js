@@ -34,9 +34,9 @@ export function decodeDataUrl(dataUrl) {
  * בודק את התמונה ושומר אותה אם אושרה.
  * @returns {{ approved: boolean, reason: string, url?: string }}
  */
-export async function checkAndStore({ buffer, type }) {
+export async function checkAndStore({ buffer, type }, want) {
   if (buffer.length > MAX_BYTES) throw new Error("התמונה גדולה מדי (עד 4MB)");
-  const check = await checkImage({ base64: buffer.toString("base64"), mediaType: type });
+  const check = await checkImage({ base64: buffer.toString("base64"), mediaType: type, want });
   if (!check.approved) return check;
 
   const name = newName(TYPES[type]);
