@@ -52,7 +52,10 @@
       <span class="mid"><b>${esc(name)}</b><span class="last">${esc(last)}</span></span>
       <span class="end"><span class="t">${esc(end)}</span><span class="pin-ic">${icon("pin", 16, 1.8)}</span></span></button>`;
     const city = getPrefs().city || "ירושלים";
+    const usd = rates.find((r) => r.code === "USD"), eur = rates.find((r) => r.code === "EUR");
+    const arrow = (c) => (c > 0 ? "▲" : c < 0 ? "▼" : "•");
     box.innerHTML = row("zmanim", "zmanim", `זמני היום · ${city}`, nextZman(), "")
+      + row("rates", "economy", "שער הדולר והמטבעות", usd ? `דולר ${usd.rate.toFixed(3)} ${arrow(usd.change)}${Math.abs(usd.change).toFixed(2)}%${eur ? ` · אירו ${eur.rate.toFixed(3)}` : ""}` : "השער היציג של בנק ישראל", usd ? clock(usd.updated) : "")
       + row("oref", "oref", "פיקוד העורף", o ? o.text.replace(/\s+/g, " ").slice(0, 90) : "הנחיות וטלפונים לשעת חירום", o ? timeAgo(o.date) : "");
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
@@ -76,8 +79,25 @@
     box.querySelectorAll("[data-tool]").forEach((b) => (b.onclick = () => TOOLS[b.dataset.tool]()));
   }
 
+  // ---------- שערי מטבע (השער היציג של בנק ישראל) ----------
+  let rates = [];
+  async function loadRates() {
+    try { const r = await fetch("/api/rates"); if (r.ok) { rates = (await r.json()).rates || []; renderPinned(); } } catch {}
+  }
+  function openRates() {
+    const upd = rates[0] ? new Date(rates[0].updated) : null;
+    sheet("שער הדולר והמטבעות", rates.length ? `
+      <div class="rates">${rates.map((r) => `<div class="rate-row">
+        <span class="rf">${r.flag}</span><span class="rn"><b>${esc(r.name)}</b><small>${r.unit > 1 ? `${r.unit} ${r.code}` : r.code}</small></span>
+        <span class="rv"><b>₪${r.rate.toFixed(r.rate < 1 ? 4 : 3)}</b><small class="${r.change > 0 ? "up" : r.change < 0 ? "down" : ""}">${r.change > 0 ? "▲" : r.change < 0 ? "▼" : "•"} ${Math.abs(r.change).toFixed(2)}%</small></span></div>`).join("")}</div>
+      <p class="zm-note">השער היציג של בנק ישראל${upd ? `, עודכן ${upd.toLocaleDateString("he-IL")} בשעה ${clock(rates[0].updated)}` : ""}. השער מתעדכן פעם ביום עסקים. השינוי הוא לעומת השער הקודם.
+      בבנק ובצ'יינג' השער בפועל יכול להיות שונה מעט.</p>`
+      : `<div class="empty">לא הצלחנו לקבל את השערים כרגע. נסו שוב בעוד דקה.</div>`);
+  }
+
   const TOOLS = {
     zmanim: openZmanim,
+    rates: openRates,
     oref: openOref,
     city: async () => {
       const city = getPrefs().city;
@@ -256,6 +276,8 @@
   renderTools();
   renderAlerts();
   loadState();
+  loadRates();
+  setInterval(() => { if (!document.hidden) loadRates(); }, 5 * 60 * 1000);
   api({ onthisday: 1 }).then((r) => { if (DEMO_MODE) return; lastYear = (r && r.articles) || []; if (lastYear.length) renderTools(); }).catch(() => {});
   setInterval(() => { if (!document.hidden) loadState(); }, 60000);
   window.nayesTools = { openZmanim, openOref, chooseCity, shareSite };
