@@ -126,6 +126,8 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   (למשל "shekel coins", "supermarket shelves", "car dashboard", "electricity meter"). בלי אנשים ובלי פרצופים.
   בכל ידיעה אחרת, ובמיוחד ידיעה על אדם מסוים (פוליטיקאי, רב, אדמו"ר), פוליטיקה, קהילה, עולם התורה, ביטחון, אסון או פטירה:
   מחרוזת ריקה. לא כל מבזק צריך תמונה, ומבזק בלי תמונה מוצג כסטטוס טקסט יפה.
+- מעצרים, סיכולים ופעילות של כוחות הביטחון (בלי נפגעים): תמונת ארכיון של הכוח שפעל, למשל מג"ב, משטרה או צה"ל
+  (topic_query: "Israel Border Police", "IDF soldiers", "Israel Police officers"). real_media_only=false.
 - real_media_only: true לפיגוע, אירוע ביטחוני עם נפגעים, אסון, תאונה קשה או פטירה. באירועים כאלה מציגים רק תמונה או סרטון
   אמיתיים מהאירוע עצמו (ממקור רשמי). אין תמונת ארכיון, אין תמונת מקום ואין תמונת נושא, ולכן person_query, person_he,
   topic_query ו-place_query יהיו מחרוזות ריקות. בכל ידיעה אחרת: false.
@@ -138,7 +140,7 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   דיון סוער במליאה → "Knesset plenum"; תפילה המונית בכותל → "Western Wall prayer".
   כשיש person_query, topic_query משמש רק כגיבוי.
   חשוב: כמעט לכל ידיעה צריכה להיות תמונה צבעונית ומושכת. אם אין מקום מוגדר, תן topic_query כללי שמתאים לנושא
-  (למשל "Israel Police car", "Magen David Adom ambulance", "Israeli shekel coins", "IDF soldiers", "Jerusalem light rail",
+  (למשל "Israel Border Police", "Israel Police officers", "IDF soldiers operation", "Israel Police car", "Magen David Adom ambulance", "Israeli shekel coins", "IDF soldiers", "Jerusalem light rail",
   "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain Jerusalem"). בלי אנשים מזוהים בנושא אישי.
 - place_query: אם הידיעה עוסקת במקום מסוים (עיר, אתר, מבנה, כביש) ואין אדם מרכזי: 2-4 מילים באנגלית לחיפוש
   תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport",
