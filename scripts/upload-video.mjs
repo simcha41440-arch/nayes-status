@@ -23,7 +23,7 @@ if (/\.(jpe?g|png|webp)$/i.test(file)) {
   if (e1) throw e1;
   const slug = makeSlug();
   const { error: e2 } = await db().from("articles").insert({
-    slug, status: "published", published_at: new Date().toISOString(), score: 7,
+    slug, status: "published", published_at: process.env.POST_AT || new Date().toISOString(), score: 7,
     title: POST_TITLE, summary: POST_SUMMARY, body: POST_BODY || null, category: POST_CATEGORY || "general",
     source_name: "מערכת נייעס סטטוס", image_url: `/media/${name}`, image_credit: POST_CREDIT || null,
   });
@@ -57,7 +57,7 @@ const video = await store(`${id}.mp4`, await readFile(file), "video/mp4");
 const poster = await store(`${id}p.jpg`, frames[Math.min(2, frames.length - 1)].buffer, "image/jpeg");
 const slug = makeSlug();
 const { error } = await db().from("articles").insert({
-  slug, status: "published", published_at: new Date().toISOString(), score: 7,
+  slug, status: "published", published_at: process.env.POST_AT || new Date().toISOString(), score: 7,
   title: POST_TITLE, summary: POST_SUMMARY, body: POST_BODY || null, category: POST_CATEGORY || "world",
   source_name: "מערכת נייעס סטטוס", video_url: video, image_url: poster, video_sound: true, image_credit: POST_CREDIT || null,
 });
