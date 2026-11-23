@@ -13,10 +13,10 @@
   const SPEEDS = { slow: "איטית", normal: "רגילה", fast: "מהירה" };
   const MUTABLE = { hot: "דחוף", ...Object.fromEntries(Object.entries(CATEGORIES).map(([k, c]) => [k, c.name])) };
 
-  render();
-
   function isOwner() { try { return Boolean(localStorage.getItem("nayes_profile")); } catch { return false; } }
   const account = () => (window.nayesUser && window.nayesUser.info()) || null;
+
+  render();
 
   function row({ id, ic, title, sub, toggle, checked, danger, href }) {
     const inner = `${icon(ic, 24, 1.7)}<span class="txt"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>
