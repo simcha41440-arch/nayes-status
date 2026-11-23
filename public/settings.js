@@ -132,7 +132,7 @@
       back.querySelectorAll("[data-up]").forEach((b) => (b.onclick = () => { const i = +b.dataset.up; [list[i - 1], list[i]] = [list[i], list[i - 1]]; draw(); }));
       back.querySelectorAll("[data-down]").forEach((b) => (b.onclick = () => { const i = +b.dataset.down; [list[i + 1], list[i]] = [list[i], list[i + 1]]; draw(); }));
       back.querySelector("[data-cancel]").onclick = () => back.remove();
-      back.querySelector("[data-reset]").onclick = () => { setPref("order", []); setPref("pinned", ["zmanim", "rates", "oref"]); back.remove(); snack("הסדר חזר לברירת המחדל"); render(); };
+      back.querySelector("[data-reset]").onclick = () => { setPref("order", []); setPref("pinned", []); back.remove(); snack("הסדר חזר לברירת המחדל"); render(); };
       back.querySelector("[data-ok]").onclick = () => {
         setPref("order", list);
         setPref("pinned", list.filter((k) => pins.has(k)));

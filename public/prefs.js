@@ -1,9 +1,14 @@
 // העדפות הקורא (נשמרות רק בדפדפן שלו) והחלה מיידית של ערכת נושא וגודל טקסט.
 
-const PREFS_DEFAULT = { theme: "dark", font: "m", speed: "normal", badge: true, hotAlerts: false, muted: [], city: "ירושלים", pinned: ["zmanim", "rates", "oref"], order: [] };
+const PREFS_DEFAULT = { theme: "dark", font: "m", speed: "normal", badge: true, hotAlerts: false, muted: [], city: "ירושלים", pinned: [], order: [] };
 
 function getPrefs() {
-  try { return { ...PREFS_DEFAULT, ...JSON.parse(localStorage.getItem("nayes_prefs") || "{}") }; }
+  try {
+    const raw = JSON.parse(localStorage.getItem("nayes_prefs") || "{}");
+    // נעוץ רק מה שהקורא נעץ בעצמו: מנקה את הנעיצות שהיו פעם ברירת מחדל
+    if (!raw.pinV) { if (String(raw.pinned) === "zmanim,rates,oref") raw.pinned = []; raw.pinV = 2; try { localStorage.setItem("nayes_prefs", JSON.stringify(raw)); } catch {} }
+    return { ...PREFS_DEFAULT, ...raw };
+  }
   catch { return { ...PREFS_DEFAULT }; }
 }
 

@@ -102,15 +102,27 @@
   }
   const fmtN = (n) => (n >= 1000 ? n.toLocaleString("he-IL", { maximumFractionDigits: 0 }) : n.toFixed(n < 1 ? 4 : n < 100 ? 3 : 2));
   const chg = (c) => `<small class="${c > 0 ? "up" : c < 0 ? "down" : ""}">${c > 0 ? "▲" : c < 0 ? "▼" : "•"} ${Math.abs(c || 0).toFixed(2)}%</small>`;
+  // סמלים עגולים בסגנון סטטוס: עיגול צבעוני עם סימן המטבע
+  const SYM = { USD: ["$", "#1f8f4e"], EUR: ["€", "#2b5fd9"], GBP: ["£", "#7b3fbf"], CHF: ["Fr", "#d6303a"], JPY: ["¥", "#c2185b"],
+    CAD: ["C$", "#e2412f"], AUD: ["A$", "#0d7c8c"], CNY: ["元", "#c62828"], RUB: ["₽", "#3f51b5"], TRY: ["₺", "#d84315"],
+    DKK: ["kr", "#b71c1c"], NOK: ["kr", "#1565c0"], SEK: ["kr", "#00838f"], ZAR: ["R", "#2e7d32"], JOD: ["JD", "#455a64"], EGP: ["E£", "#8d6e63"],
+    BTC: ["₿", "#f7931a"], ETH: ["Ξ", "#627eea"], USDT: ["₮", "#26a17b"], BNB: ["B", "#d4a20b"], SOL: ["S", "#9945ff"], XRP: ["X", "#23292f"],
+    USDC: ["$", "#2775ca"], DOGE: ["Ð", "#c2a633"], ADA: ["₳", "#0033ad"], TRX: ["T", "#ef0027"], LTC: ["Ł", "#345d9d"], AVAX: ["A", "#e84142"] };
+  const METAL = { GOLD: ["Au", "linear-gradient(135deg,#f6d365,#c9932b)"], SILVER: ["Ag", "linear-gradient(135deg,#e6e9ee,#8e98a5)"], OIL: ["", "#37474f"] };
+  const av = (code) => {
+    if (METAL[code]) return `<span class="rf" style="background:${METAL[code][1]}">${code === "OIL" ? `<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#fff" d="M12 2.7S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.7 12 2.7z"/></svg>` : METAL[code][0]}</span>`;
+    const [s, c] = SYM[code] || [code.slice(0, 2), "#607d8b"];
+    return `<span class="rf${s.length > 1 ? " sm" : ""}" style="background:${c}">${s}</span>`;
+  };
   function openRates(refresh) {
     const row = (flag, name, sub, val, c) => `<div class="rate-row"><span class="rf">${flag}</span><span class="rn"><b>${esc(name)}</b><small>${sub}</small></span>
       <span class="rv"><b>₪${fmtN(val)}</b>${chg(c)}</span></div>`;
     const html = rates.length ? `
       <div class="live-note"><i></i> מתעדכן כל דקה · ${esc(clock(new Date().toISOString()))}</div>
       <h3 class="sheet-h">מטבעות</h3>
-      <div class="rates">${rates.map((r) => row(r.flag, r.name, `${r.unit > 1 ? r.unit + " " : ""}${r.code}${r.official ? ` · יציג ${fmtN(r.official)}` : ""}`, r.rate, r.change)).join("")}</div>
-      ${commodities.length ? `<h3 class="sheet-h">זהב, כסף ונפט</h3><div class="rates">${commodities.map((c) => row(c.flag, c.name, `$${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
-      ${crypto.length ? `<h3 class="sheet-h">מטבעות דיגיטליים</h3><div class="rates">${crypto.map((c) => row("🪙", c.name, `${c.code} · $${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
+      <div class="rates">${rates.map((r) => row(av(r.code), r.name, `${r.unit > 1 ? r.unit + " " : ""}${r.code}${r.official ? ` · יציג ${fmtN(r.official)}` : ""}`, r.rate, r.change)).join("")}</div>
+      ${commodities.length ? `<h3 class="sheet-h">זהב, כסף ונפט</h3><div class="rates">${commodities.map((c) => row(av(c.code), c.name, `$${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
+      ${crypto.length ? `<h3 class="sheet-h">מטבעות דיגיטליים</h3><div class="rates">${crypto.map((c) => row(av(c.code), c.name, `${c.code} · $${fmtN(c.usd)}`, c.rate, c.change)).join("")}</div>` : ""}
       <p class="zm-note">שערי השוק מתעדכנים כל דקה. "יציג" הוא השער היציג הרשמי של בנק ישראל, שמתפרסם פעם ביום עסקים.
       במטבעות דיגיטליים: השינוי ב-24 השעות האחרונות. בבנק ובצ'יינג' השער בפועל יכול להיות שונה מעט.</p>`
       : `<div class="empty">לא הצלחנו לקבל את השערים כרגע. נסו שוב בעוד דקה.</div>`;
