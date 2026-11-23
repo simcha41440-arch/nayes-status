@@ -16,11 +16,15 @@ const CRYPTO = [
 const UA = { "User-Agent": "Mozilla/5.0 (compatible; NayesStatus/1.0)" };
 
 async function yahoo(sym) {
-  const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=5d`, { headers: UA });
+  const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1d`, { headers: UA });
   if (!r.ok) return null;
   const m = (await r.json()).chart?.result?.[0]?.meta;
   if (!m || !m.regularMarketPrice) return null;
-  const prev = m.chartPreviousClose || m.previousClose;
+  // השינוי היומי: לעומת סגירת יום המסחר הקודם
+  if (typeof m.regularMarketChangePercent === "number") {
+    return { price: m.regularMarketPrice, change: m.regularMarketChangePercent, time: m.regularMarketTime ? new Date(m.regularMarketTime * 1000).toISOString() : null };
+  }
+  const prev = m.previousClose || m.chartPreviousClose;
   return {
     price: m.regularMarketPrice,
     change: prev ? ((m.regularMarketPrice - prev) / prev) * 100 : 0,
