@@ -109,20 +109,26 @@
   function arrange() {
     const all = { all: "נייעס סטטוס (הכל)", ...TOOL_CHANNELS, hot: "דחוף", city: `העיר שלי (${getPrefs().city || "ירושלים"})`,
       ...Object.fromEntries(Object.entries(CATEGORIES).map(([k, c]) => [k, c.name])) };
-    let list = byUserOrder(Object.keys(all), (k) => k);
     const pins = new Set(getPrefs().pinned || []);
+    let list = byUserOrder(Object.keys(all), (k) => k);
+    list = [...list.filter((k) => pins.has(k)), ...list.filter((k) => !pins.has(k))];
     const back = document.createElement("div");
     back.className = "dlg-back";
     const draw = () => {
       back.innerHTML = `<div class="dlg arrange" role="dialog" aria-modal="true"><h3>סידור ערוצים ונעיצה</h3>
-        <p>📌 נעוץ = תמיד למעלה. החצים קובעים את הסדר.</p>
+        <p>📌 נעוץ = תמיד למעלה, בסדר שקובעים בחצים. כל שאר הערוצים מסתדרים לבד, כמו בסטטוס: מה שעודכן אחרון ראשון.</p>
         <div class="ar-list">${list.map((k, i) => `<div class="ar-row">
           <button class="ar-pin ${pins.has(k) ? "on" : ""}" data-pin="${k}" aria-label="נעיצה">${icon("pin", 18, 2)}</button>
           <span>${esc(all[k])}</span>
-          <button data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="למעלה">▲</button>
-          <button data-down="${i}" ${i === list.length - 1 ? "disabled" : ""} aria-label="למטה">▼</button></div>`).join("")}</div>
+          ${pins.has(k) ? `<button data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="למעלה">▲</button>
+          <button data-down="${i}" ${i === pins.size - 1 ? "disabled" : ""} aria-label="למטה">▼</button>` : `<small class="ar-auto">לפי העדכון האחרון</small>`}</div>`).join("")}</div>
         <div class="btns"><button data-reset>ברירת מחדל</button><button data-cancel>ביטול</button><button data-ok>שמירה</button></div></div>`;
-      back.querySelectorAll("[data-pin]").forEach((b) => (b.onclick = () => { const k = b.dataset.pin; pins.has(k) ? pins.delete(k) : pins.add(k); draw(); }));
+      back.querySelectorAll("[data-pin]").forEach((b) => (b.onclick = () => {
+        const k = b.dataset.pin;
+        pins.has(k) ? pins.delete(k) : pins.add(k);
+        list = [...list.filter((x) => pins.has(x)), ...list.filter((x) => !pins.has(x))]; // הנעוצים תמיד למעלה ברשימה
+        draw();
+      }));
       back.querySelectorAll("[data-up]").forEach((b) => (b.onclick = () => { const i = +b.dataset.up; [list[i - 1], list[i]] = [list[i], list[i - 1]]; draw(); }));
       back.querySelectorAll("[data-down]").forEach((b) => (b.onclick = () => { const i = +b.dataset.down; [list[i + 1], list[i]] = [list[i], list[i + 1]]; draw(); }));
       back.querySelector("[data-cancel]").onclick = () => back.remove();

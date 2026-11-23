@@ -533,3 +533,4 @@ body.has-viewer .fab-mini { display: none; }
 
 .live-note { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; margin: 4px 2px 0; }
 .live-note i { width: 8px; height: 8px; border-radius: 50%; background: #12a150; animation: blink 1.6s infinite; }
+.ar-auto { color: var(--muted); font-size: 12px; white-space: nowrap; }

@@ -203,8 +203,10 @@
     const all = channels();
     const chs = all.filter((c) => !c.muted);
     const mutedChs = all.filter((c) => c.muted);
-    // קודם ערוצים עם עדכונים חדשים, אחר כך מה שנצפה
-    const ordered = [...chs.filter((c) => unseen(c.items)), ...chs.filter((c) => !unseen(c.items))];
+    // כמו בסטטוס: הערוץ שעודכן אחרון ראשון (קודם מה שלא נצפה, אחר כך מה שנצפה)
+    const last = (c) => (c.items[0] ? Date.parse(c.items[0].published_at) || 0 : 0);
+    const byRecent = (list) => [...list].sort((a, b) => last(b) - last(a));
+    const ordered = [...byRecent(chs.filter((c) => unseen(c.items))), ...byRecent(chs.filter((c) => !unseen(c.items)))];
 
     const cardHtml = (ch) => {
       const latest = ch.items[0];
@@ -233,7 +235,8 @@
     };
     // ערוצים נעוצים קודם, ואחריהם השאר לפי הסדר שהקורא בחר (ובלי סדר: קודם מה שחדש)
     const pinnedKeys = getPrefs().pinned || [];
-    const listChs = [...byUserOrder(chs.filter((c) => pinnedKeys.includes(c.key))), ...((getPrefs().order || []).length ? byUserOrder(chs.filter((c) => !pinnedKeys.includes(c.key))) : ordered.filter((c) => !pinnedKeys.includes(c.key)))];
+    // נעוצים למעלה בסדר שהקורא קבע; כל השאר: מה שעודכן אחרון ראשון, בדיוק כמו בסטטוס
+    const listChs = [...byUserOrder(chs.filter((c) => pinnedKeys.includes(c.key))), ...byRecent(chs.filter((c) => !pinnedKeys.includes(c.key)))];
     $("chans").innerHTML = listChs.map(chanRow).join("") + (mutedChs.length
       ? `<button class="muted-toggle" id="muted-toggle">ערוצים מושתקים (${mutedChs.length}) ${icon("chevLeft", 18)}</button>
          <div class="muted-list" id="muted-list">${mutedChs.map(chanRow).join("")}</div>`
