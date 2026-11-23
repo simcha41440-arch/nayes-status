@@ -97,7 +97,7 @@
     const res = await api({ limit: 60 });
     let seen = [];
     try { seen = JSON.parse(localStorage.getItem("nayes_seen") || "[]"); } catch {}
-    const all = new Set([...seen, ...(res.articles || []).map((a) => a.slug)]);
+    const all = new Set([...seen, ...(res.articles || []).map((a) => `${a.slug}@${a.published_at || ""}`)]);
     try { localStorage.setItem("nayes_seen", JSON.stringify([...all].slice(-400))); } catch {}
     setUnreadBadge(0);
     snack("כל המבזקים סומנו כנצפו");
