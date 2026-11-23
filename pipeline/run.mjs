@@ -373,7 +373,7 @@ async function frontPages(hm) {
 const DRY = process.env.DRY_RUN === "true";
 const dryRows = [];
 const chain = () => { const c = { eq: () => c, in: () => c, like: () => c, then: (f) => Promise.resolve({ error: null }).then(f) }; return c; };
-const W = () => (DRY ? { insert: async (r) => { if (r.status === "published") dryRows.push(r); return { error: null }; }, update: (r) => { dryRows.push({ ...r, _update: true }); return chain(); } } : db().from("articles"));
+const W = () => (DRY ? { insert: async (r) => { if (r.status === "published" || r.status === "pending") dryRows.push(r); return { error: null }; }, update: (r) => { dryRows.push({ ...r, _update: true }); return chain(); } } : db().from("articles"));
 
 async function main() {
   // מתג השהיה: כשהקובץ pipeline/PAUSED קיים, אין עדכונים בכלל
