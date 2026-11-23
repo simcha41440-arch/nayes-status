@@ -16,6 +16,8 @@
   let articles = [];
   let ads = [];
   let seen = new Set(load("nayes_seen", []));
+  // מבזק שעודכן (אירוע מתגלגל) נחשב חדש שוב, כי מפתח הצפייה כולל את זמן העדכון
+  const sk = (a) => `${a.slug}@${a.published_at || ""}`;
   let myRx = load("nayes_rx", {});
 
   function load(key, def) {
@@ -43,7 +45,7 @@
   document.addEventListener("click", () => $("menu").classList.remove("open"));
   $("menu-share").onclick = () => window.nayesTools && window.nayesTools.shareSite();
   $("menu-seen").onclick = () => {
-    recentOnly(articles).forEach((a) => seen.add(a.slug));
+    recentOnly(articles).forEach((a) => seen.add(sk(a)));
     save("nayes_seen", [...seen].slice(-400));
     renderHome();
   };
@@ -93,7 +95,7 @@
     const fresh = res.articles.filter((a) => knownSlugs && !knownSlugs.has(a.slug));
     articles = res.articles;
     knownSlugs = new Set(articles.map((a) => a.slug));
-    alertHot(fresh.filter((a) => a.is_breaking && !seen.has(a.slug) && !isMuted(a)));
+    alertHot(fresh.filter((a) => a.is_breaking && !seen.has(sk(a)) && !isMuted(a)));
     announce();
     if (viewer.open) updateBadge();
     else renderHome();
@@ -127,7 +129,7 @@
   };
 
   function updateBadge() {
-    const unread = recentOnly(articles).filter((a) => !seen.has(a.slug) && !isMuted(a)).length;
+    const unread = recentOnly(articles).filter((a) => !seen.has(sk(a)) && !isMuted(a)).length;
     setUnreadBadge(unread);
   }
 
@@ -158,7 +160,7 @@
     return out;
   }
 
-  const unseen = (items) => items.filter((a) => !seen.has(a.slug)).length;
+  const unseen = (items) => items.filter((a) => !seen.has(sk(a))).length;
 
   // טבעת מחולקת לקטעים: קטע צבעוני לכל עדכון שלא נצפה, אפור למה שנצפה
   function ring(total, seenN, size) {
@@ -295,7 +297,7 @@
       seq.push({ type: "news", a });
       if (pool.length && (i + 1) % 4 === 0 && i < news.length - 1) seq.push({ type: "ad", ad: pool[k++ % pool.length] });
     });
-    let start = slug ? seq.findIndex((s) => s.a && s.a.slug === slug) : seq.findIndex((s) => s.a && !seen.has(s.a.slug));
+    let start = slug ? seq.findIndex((s) => s.a && s.a.slug === slug) : seq.findIndex((s) => s.a && !seen.has(sk(s.a)));
     openSeq(seq, Math.max(0, start));
   }
 
@@ -411,7 +413,7 @@
     const cat = CATEGORIES[a.category] || CATEGORIES.general;
     const len = (a.title || "").length + (a.summary || "").length + (a.impact || "").length;
     viewer.dur = Math.max(6000, Math.min(14000, 4000 + len * 40)) * speedFactor();
-    seen.add(a.slug);
+    seen.add(sk(a));
     save("nayes_seen", [...seen].slice(-400));
     updateBadge();
     history.replaceState(null, "", articleUrl(a));

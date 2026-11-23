@@ -57,6 +57,19 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
 ידיעה מפתיעה, מרתקת או "וואו" (חידוש טכנולוגי, שיא, הצלה מרגשת, גילוי מעניין, סיפור אנושי נקי ומרגש)
 מקבלת 6-7 גם אם היא לא "חדשות קשות". אל תיתן ציון גבוה רק בגלל שהנושא הוא איראן או מלחמה: גם שם, רק מה שחדש באמת.
 
+## המטרה: מי שפותח את האתר אחרי כמה שעות מבין מיד מה קרה במדינה
+הקוראים לא רוצים 250 הודעות כמו בקבוצות. הם רוצים תמונה ברורה ומסוכמת של הדברים החשובים.
+- כתוב רק עובדות קונקרטיות ותוצאות: מה קרה, איפה, כמה, מה המצב עכשיו, ומה זה אומר.
+- פסול עדכוני "תהליך" בלי תוצאה: "X הגיע לאירוע", "X נפגש עם Y", "בודקים", "צפוי", "בקרוב", "ממתינים להחלטה",
+  הצהרה בלי החלטה, תגובה לתגובה, ציוץ של פוליטיקאי. (reject_reason: "עדכון תהליך בלי תוצאה")
+- אירוע מתגלגל (פיגוע, תאונה גדולה, משא ומתן): ידיעה אחת שמתעדכנת, לא עשר ידיעות קטנות. ראה "עדכון לידיעה קיימת".
+
+## עדכון לידיעה קיימת
+ברשימת "המבזקים שכבר פורסמו" כל מבזק מסומן במספר. אם החומר החדש הוא התפתחות של אותו אירוע (מספר נפגעים עודכן,
+המחבל נוטרל, ההצבעה הסתיימה, נמצא פתרון): החזר update_index עם המספר שלו, relevant=true, וכתוב title, summary ו-body
+של הידיעה המלאה והמעודכנת: כל מה שידוע עכשיו, מסוכם, העדכני ביותר קודם. לא "בהמשך לדיווח", אלא תמונת מצב שלמה.
+אם זו ידיעה חדשה: update_index=-1. אם זה אותו אירוע בלי שום חידוש: relevant=false ו-reject_reason "כפילות".
+
 ## כפילויות
 אם יש רשימה של "מבזקים שכבר פורסמו", ואותו אירוע כבר מופיע בה (גם בניסוח אחר או ממקור אחר),
 החזר relevant=false עם reject_reason "כפילות", אלא אם יש בידיעה התפתחות חדשה ומשמעותית.
@@ -117,9 +130,12 @@ const EDITOR_SYSTEM = `אתה העורך של "נייעס סטטוס", ערוץ 
   למשל: חוק הגיוס או תקציב הישיבות → "United Torah Judaism Knesset"; ש"ס בכנסת → "Shas Knesset";
   דיון סוער במליאה → "Knesset plenum"; תפילה המונית בכותל → "Western Wall prayer".
   ידיעה על פגישה, ביקור, נאום או אירוע של אדם מסוים (למשל "דרעי נפגש עם..."): מחרוזת ריקה, כדי שלא תוצג תמונה שלא מהאירוע.
+  חשוב: כמעט לכל ידיעה צריכה להיות תמונה צבעונית ומושכת. אם אין מקום מוגדר, תן topic_query כללי שמתאים לנושא
+  (למשל "Israel Police car", "Magen David Adom ambulance", "Israeli shekel coins", "IDF soldiers", "Jerusalem light rail",
+  "Knesset plenum", "Tehran skyline", "hospital Israel", "highway Israel traffic", "rain Jerusalem"). בלי אנשים מזוהים בנושא אישי.
 - place_query: אם הידיעה עוסקת במקום מסוים (עיר, אתר, מבנה, כביש) ואין אדם מרכזי: 2-4 מילים באנגלית לחיפוש
-  תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport").
-  באסון, בפיגוע או בפטירה: מחרוזת ריקה.`;
+  תמונה אמיתית של המקום (למשל "Arad Israel", "Western Wall Jerusalem", "Knesset building", "Ben Gurion Airport",
+  "Ramot Junction Jerusalem"). גם בפיגוע או תאונה: תמונה של המקום עצמו (הצומת, הכביש, העיר) מתאימה. בפטירה: מחרוזת ריקה.`;
 
 const ARTICLE_SCHEMA = {
   type: "object",
@@ -139,10 +155,11 @@ const ARTICLE_SCHEMA = {
     image_query: { type: "string" },
     topic_query: { type: "string" },
     place_query: { type: "string" },
+    update_index: { type: "integer" },
   },
   required: [
     "relevant", "reject_reason", "score", "title", "summary", "body", "impact",
-    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "place_query",
+    "category", "city", "is_breaking", "ai_notes", "needs_review", "image_query", "topic_query", "place_query", "update_index",
   ],
   additionalProperties: false,
 };
@@ -188,7 +205,7 @@ async function askJson({ system, content, schema, maxTokens = 8000 }) {
 export async function writeArticle(raw) {
   const recent = (raw.recentTitles || []).slice(0, 60);
   // רשימת המבזקים שכבר פורסמו זהה בכל הידיעות של אותה ריצה: נשמרת במטמון (זול פי 10)
-  const recentBlock = recent.length ? `מבזקים שכבר פורסמו (ב-12 השעות האחרונות):\n${recent.map((t) => `- ${t}`).join("\n")}` : "";
+  const recentBlock = recent.length ? `מבזקים שכבר פורסמו (ב-12 השעות האחרונות):\n${recent.map((t, i) => typeof t === "string" ? `[${i}] ${t}` : `[${i}] ${t.title}: ${String(t.summary || "").slice(0, 220)}`).join("\n")}` : "";
   const itemText =
     `מקור: ${raw.sourceName || "לא צוין"}\n` +
     (raw.lowTrust ? "סוג המקור: ערוץ מבזקים לא רשמי\n" : "") +
@@ -287,6 +304,7 @@ const PREFILTER_SCHEMA = {
 
 /** @param {{source: string, text: string}[]} items  @returns {Promise<{pass: boolean, reason: string}[]>} */
 export async function prefilter(items, recentTitles = []) {
+  recentTitles = recentTitles.map((t) => (typeof t === "string" ? t : t.title));
   if (!items.length) return [];
   const recent = recentTitles.length ? `המבזקים שכבר פורסמו:\n${recentTitles.slice(0, 60).map((t) => `- ${t}`).join("\n")}\n\nהידיעות לבדיקה:\n` : "";
   const list = recent + items.map((it, i) => `[${i}] (${it.source}) ${String(it.text).slice(0, 600).replace(/\s+/g, " ")}`).join("\n\n");

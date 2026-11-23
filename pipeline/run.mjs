@@ -418,9 +418,9 @@ async function main() {
 
   // כותרות שכבר פורסמו, כדי שהעורך לא יפרסם את אותו אירוע פעמיים
   const since12 = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
-  const { data: recentRows } = await db().from("articles").select("title").eq("status", "published")
-    .gte("published_at", since12).order("published_at", { ascending: false }).limit(60);
-  const recentTitles = (recentRows || []).map((r) => r.title);
+  const { data: recentRows } = await db().from("articles").select("slug,title,summary").eq("status", "published")
+    .gte("published_at", since12).order("published_at", { ascending: false }).limit(40);
+  const recentTitles = (recentRows || []).map((r) => ({ slug: r.slug, title: r.title, summary: r.summary }));
 
   // שלב 1: סינון זול של כל המועמדות בבת אחת (כולל כפילויות וידיעות שוליות בבירור)
   const verdicts = await prefilter(candidates.map((c) => ({ source: c.source.name, text: c.text })), recentTitles);
@@ -463,6 +463,22 @@ async function main() {
       source_url: item.link,
       source_hash: item.hash,
     };
+
+    // התפתחות של אירוע שכבר פורסם: מעדכנים את אותו מבזק (ומקפיצים אותו למעלה כחדש), במקום מבזק נוסף
+    const target = art.relevant && Number.isInteger(art.update_index) && art.update_index >= 0 ? recentTitles[art.update_index] : null;
+    if (target && target.slug) {
+      const { error: ue } = await db().from("articles").update({
+        title: art.title, summary: art.summary || null, body: art.body || null, impact: art.impact || null,
+        is_breaking: art.is_breaking, published_at: new Date().toISOString(),
+      }).eq("slug", target.slug);
+      await db().from("articles").insert({ ...base, title: "(עדכון)", status: "rejected", ai_notes: `עודכן לתוך ${target.slug}` });
+      if (!ue) {
+        console.log(`  ↻ [${item.source.name}] עודכן: ${art.title}`);
+        Object.assign(target, { title: art.title, summary: art.summary });
+        accepted++;
+        continue;
+      }
+    }
 
     if (art.relevant && art.score < MIN_SCORE) {
       art = { relevant: false, reject_reason: `ציון חשיבות נמוך (${art.score}/10): ${art.title}` };
@@ -586,7 +602,7 @@ async function main() {
     }
     accepted++;
     console.log(`  ✓ [${item.source.name}] ${art.score}/10 ${publishNow ? "פורסם" : "ממתין"}: ${art.title}`);
-    if (publishNow) recentTitles.unshift(art.title);
+    if (publishNow) recentTitles.unshift({ slug: row.slug, title: art.title, summary: art.summary });
     newTitles.push(`${art.is_breaking ? "🔴 " : "• "}${art.title} (${art.score}/10)`);
   }
 
