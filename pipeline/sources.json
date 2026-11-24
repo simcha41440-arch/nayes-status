@@ -266,5 +266,95 @@
     "city": "",
     "media": false,
     "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "MOHreport",
+    "name": "משרד הבריאות",
+    "category": "health",
+    "city": "",
+    "media": true,
+    "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "TheMarkerOnline",
+    "name": "TheMarker",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ynet צרכנות",
+    "url": "https://www.ynet.co.il/Integration/StoryRss5363.xml",
+    "category": "consumer",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ynet כלכלה",
+    "url": "https://www.ynet.co.il/Integration/StoryRss6.xml",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "מעריב כלכלה",
+    "url": "https://www.maariv.co.il/Rss/RssFeedsKalkalaUtsarchanut",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "גלובס צרכנות",
+    "url": "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=821",
+    "category": "consumer",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "גלובס נדל\"ן",
+    "url": "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=607",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "וואלה כלכלה",
+    "url": "https://rss.walla.co.il/feed/2",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "וואלה חוץ",
+    "url": "https://rss.walla.co.il/feed/3",
+    "category": "world",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "JDN חדשות",
+    "url": "https://www.jdn.co.il/news/feed/",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "BBC",
+    "url": "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
+    "category": "world",
+    "city": "",
+    "media": false,
+    "enabled": true
   }
 ]
