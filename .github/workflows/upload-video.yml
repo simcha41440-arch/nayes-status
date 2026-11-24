@@ -10,6 +10,7 @@ on:
       credit: { required: false, default: "" }
       skip_check: { description: "בעל האתר העלה: בלי בדיקה", required: false, default: "true" }
       at: { description: "זמן הפרסום (ריק = עכשיו)", required: false, default: "" }
+      slug: { description: "החלפת תמונה במבזק קיים", required: false, default: "" }
 jobs:
   upload:
     runs-on: ubuntu-24.04
@@ -32,3 +33,4 @@ jobs:
           POST_CREDIT: ${{ inputs.credit }}
           SKIP_CHECK: ${{ inputs.skip_check }}
           POST_AT: ${{ inputs.at }}
+          POST_SLUG: ${{ inputs.slug }}

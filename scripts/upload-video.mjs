@@ -21,6 +21,13 @@ if (/\.(jpe?g|png|webp)$/i.test(file)) {
   const name = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
   const { error: e1 } = await db().storage.from("media").upload(name, await readFile(file), { contentType: type });
   if (e1) throw e1;
+  // החלפת התמונה במבזק קיים (בלי לשנות את הטקסט ואת שעת הפרסום)
+  if (process.env.POST_SLUG) {
+    const { error } = await db().from("articles").update({ image_url: `/media/${name}`, ...(POST_CREDIT ? { image_credit: POST_CREDIT } : {}) }).eq("slug", process.env.POST_SLUG);
+    if (error) throw error;
+    console.log(`התמונה הוחלפה: /article/${process.env.POST_SLUG}`);
+    process.exit(0);
+  }
   const slug = makeSlug();
   const { error: e2 } = await db().from("articles").insert({
     slug, status: "published", published_at: process.env.POST_AT || new Date(Date.now() - 3 * 60000).toISOString(), score: 7,
