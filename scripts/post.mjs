@@ -22,6 +22,28 @@ async function youtube(input) {
   if (!stored.approved) throw new Error("תמונת הסרטון לא עברה בדיקה: " + stored.reason);
   return { video_url: `https://www.youtube-nocookie.com/embed/${id}`, image_url: stored.url };
 }
+
+// תמונה מוויקישיתוף (רק ברישיון חופשי): POST_IMAGE="commons:חיפוש|מילת חובה|מה צריך להיראות"
+const strip = (x = "") => x.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+async function commons(spec) {
+  const [q, must = "", want = ""] = spec.slice(8).split("|").map((x) => x.trim());
+  const UA = { "User-Agent": "NayesStatus/1.0 (news site; contact via site)" };
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=${encodeURIComponent(q + " filetype:bitmap")}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=1080`, { headers: UA });
+  const pages = Object.values((await r.json()).query?.pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
+  for (const p of pages) {
+    const info = p.imageinfo?.[0]; if (!info || !/image\/(jpeg|png)/.test(info.mime || "")) continue;
+    const meta = info.extmetadata || {}; const license = strip(meta.LicenseShortName?.value || "");
+    if (!/^(CC BY|CC0|Public domain|PD)/i.test(license) || /NC|ND/.test(license)) continue;
+    const text = `${p.title} ${strip(meta.ImageDescription?.value || "")}`.toLowerCase();
+    if (must && !text.includes(must.toLowerCase())) continue;
+    const img = await fetch(info.thumburl || info.url, { headers: UA }); if (!img.ok) continue;
+    const stored = await checkAndStore({ buffer: Buffer.from(await img.arrayBuffer()), type: (img.headers.get("content-type") || "image/jpeg").split(";")[0] }, want);
+    if (!stored.approved) { console.log(`נפסלה: ${p.title} (${stored.reason})`); continue; }
+    console.log(`תמונה: ${p.title}`);
+    return { image_url: stored.url, image_credit: `צילום ארכיון: ${strip(meta.Artist?.value || "").slice(0, 60) || "ויקישיתוף"} / ויקישיתוף (${license})` };
+  }
+  throw new Error("לא נמצאה תמונה מתאימה בוויקישיתוף");
+}
 // הורדת מבזקים מהאתר: POST_UNPUBLISH=slug1,slug2
 if (process.env.POST_UNPUBLISH) {
   const slugs = process.env.POST_UNPUBLISH.split(",").map((x) => x.trim()).filter(Boolean);
@@ -33,6 +55,7 @@ if (process.env.POST_UNPUBLISH) {
 const { POST_TITLE, POST_SUMMARY, POST_BODY, POST_CATEGORY, POST_SOURCE, POST_SLUG, POST_YOUTUBE, POST_CREDIT } = process.env;
 const media = POST_YOUTUBE ? await youtube(POST_YOUTUBE.trim()) : {};
 if (POST_YOUTUBE) media.image_credit = POST_CREDIT || "וידאו: יוטיוב";
+if (process.env.POST_IMAGE && process.env.POST_IMAGE.startsWith("commons:")) Object.assign(media, await commons(process.env.POST_IMAGE));
 if (!POST_TITLE || !POST_SUMMARY) throw new Error("חסרים כותרת או טקסט");
 let targetSlug = POST_SLUG;
 // "like:מילה" = המבזק האחרון שהכותרת שלו מכילה את המילה; מוקפץ מחדש למעלה

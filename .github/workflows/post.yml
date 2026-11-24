@@ -11,6 +11,7 @@ on:
       slug: { description: "לעדכון מבזק קיים", required: false, default: "" }
       youtube: { description: "קישור לסרטון ביוטיוב (מוטמע)", required: false, default: "" }
       credit: { description: "קרדיט לסרטון", required: false, default: "" }
+      image: { description: "תמונה: commons:חיפוש|מילת חובה|תיאור", required: false, default: "" }
 jobs:
   post:
     runs-on: ubuntu-24.04
@@ -32,4 +33,5 @@ jobs:
           POST_UNPUBLISH: ${{ inputs.unpublish }}
           POST_YOUTUBE: ${{ inputs.youtube }}
           POST_CREDIT: ${{ inputs.credit }}
+          POST_IMAGE: ${{ inputs.image }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
