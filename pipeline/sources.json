@@ -356,5 +356,111 @@
     "city": "",
     "media": false,
     "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "merkaz",
+    "name": "חדשות הקו החרדי",
+    "category": "community",
+    "city": "",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "Moshepargod",
+    "name": "חדשות הפרגוד",
+    "category": "community",
+    "city": "",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "ZiratNews",
+    "name": "זירת החדשות",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "hamoked_il",
+    "name": "חדשות המוקד",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "type": "telegram",
+    "channel": "hazfon1",
+    "name": "חדשות לפני כולם",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true,
+    "trust": "low"
+  },
+  {
+    "name": "Yeshiva World",
+    "url": "https://www.theyeshivaworld.com/feed",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "VIN",
+    "url": "https://vinnews.com/feed/",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "Matzav",
+    "url": "https://matzav.com/feed/",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "COLlive",
+    "url": "https://collive.com/feed/",
+    "category": "community",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ynet רכב",
+    "url": "https://www.ynet.co.il/Integration/StoryRss550.xml",
+    "category": "consumer",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ynet דיגיטל",
+    "url": "https://www.ynet.co.il/Integration/StoryRss545.xml",
+    "category": "tech",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "השירות המטאורולוגי - תחזית",
+    "url": "https://ims.gov.il/sites/default/files/ims_data/rss/forecast_country/rssForecastCountry_he.xml",
+    "category": "weather",
+    "city": "",
+    "media": false,
+    "enabled": true
   }
 ]
