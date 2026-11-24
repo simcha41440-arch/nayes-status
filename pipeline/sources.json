@@ -208,5 +208,63 @@
     "media": false,
     "enabled": true,
     "trust": "low"
+  },
+  {
+    "name": "N12",
+    "url": "https://rcs.mako.co.il/rss/news-israel.xml",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ערוץ 7",
+    "url": "https://www.inn.co.il/Rss.aspx",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "סרוגים",
+    "url": "https://www.srugim.co.il/feed",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "ice",
+    "url": "https://www.ice.co.il/rss/",
+    "category": "economy",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "name": "Jerusalem Post",
+    "url": "https://www.jpost.com/rss/rssfeedsfrontpage.aspx",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "N12chat",
+    "name": "N12 צ׳אט הכתבים",
+    "category": "",
+    "city": "",
+    "media": false,
+    "enabled": true
+  },
+  {
+    "type": "telegram",
+    "channel": "hamechadesh",
+    "name": "המחדש",
+    "category": "community",
+    "city": "",
+    "media": false,
+    "enabled": true
   }
 ]
